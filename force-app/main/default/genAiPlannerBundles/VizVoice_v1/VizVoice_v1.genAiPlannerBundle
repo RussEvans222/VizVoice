@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPlannerBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Help people see and understand data with conversational analytics. Analytics and Visualization generates natural language insights, visualizations, and proactive alerts.</description>
+    <localTopicLinks>
+        <genAiPluginName>DataAlertManagement_16jgK000001lS6j</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>SemanticDataAnalysis_16jgK000001lS6j</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>VisualizationManagementCommands_16jgK000001lS6j</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>VisualizationManagement_16jgK000001lS6j</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>ambiguous_question_16jgK000001lS6j</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>off_topic_16jgK000001lS6j</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>topic_selector_16jgK000001lS6j</genAiPluginName>
+    </localTopicLinks>
+    <localTopics>
+        <fullName>VisualizationManagement_16jgK000001lS6j</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Create or update a visualization</description>
+        <developerName>VisualizationManagement_16jgK000001lS6j</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.</description>
+            <developerName>instruction0_179gK000001u0RN</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179gK000001u0RN</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>CreateUpdateVisualization_179gK000001u0RN</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>CreateUpdateVisualization_179gK000001u0RN</fullName>
+            <description>Create a visualization or update its filtering, layout, or styling</description>
+            <developerName>CreateUpdateVisualization_179gK000001u0RN</developerName>
+            <invocationTarget>createUpdateVisualization</invocationTarget>
+            <invocationTargetType>standardInvocableAction</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>true</isIncludeInProgressIndicator>
+            <localDeveloperName>CreateUpdateVisualization</localDeveloperName>
+            <masterLabel>Create or Update Visualization</masterLabel>
+            <progressIndicatorMessage>Updating your visualization</progressIndicatorMessage>
+            <source>Analytics__CreateUpdateVisualization</source>
+        </localActions>
+        <localDeveloperName>VisualizationManagement</localDeveloperName>
+        <masterLabel>Visualization Management</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>ambiguous_question_16jgK000001lS6j</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Redirect conversation to relevant topics when user request is too ambiguous</description>
+        <developerName>ambiguous_question_16jgK000001lS6j</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.</description>
+            <developerName>instruction0_179gK000001u0RQ</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179gK000001u0RQ</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localDeveloperName>ambiguous_question</localDeveloperName>
+        <masterLabel>Ambiguous Question</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>SemanticDataAnalysis_16jgK000001lS6j</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Answer an analytical question in the context of a dashboard, visualization, metric, or semantic data model</description>
+        <developerName>SemanticDataAnalysis_16jgK000001lS6j</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.</description>
+            <developerName>instruction0_179gK000001u0RR</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179gK000001u0RR</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>AnalyzeSemanticData_179gK000001u0RR</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>AnalyzeSemanticData_179gK000001u0RR</fullName>
+            <description>Answer an analytical question in the context of a dashboard, visualization, metric, or semantic data model</description>
+            <developerName>AnalyzeSemanticData_179gK000001u0RR</developerName>
+            <invocationTarget>analyzeSemanticData</invocationTarget>
+            <invocationTargetType>standardInvocableAction</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>true</isIncludeInProgressIndicator>
+            <localDeveloperName>AnalyzeSemanticData</localDeveloperName>
+            <masterLabel>Analyze Data</masterLabel>
+            <progressIndicatorMessage>Analyzing your data</progressIndicatorMessage>
+            <source>Analytics__AnalyzeSemanticData</source>
+        </localActions>
+        <localDeveloperName>SemanticDataAnalysis</localDeveloperName>
+        <masterLabel>Semantic Data Analysis</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>DataAlertManagement_16jgK000001lS6j</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Create and manage data alerts</description>
+        <developerName>DataAlertManagement_16jgK000001lS6j</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.</description>
+            <developerName>instruction0_179gK000001u0RO</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179gK000001u0RO</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>CreateDataAlert_179gK000001u0RO</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>CreateDataAlert_179gK000001u0RO</fullName>
+            <description>Create a new alert to be notified when analytical conditions are met in the context of a dashboard or metric</description>
+            <developerName>CreateDataAlert_179gK000001u0RO</developerName>
+            <invocationTarget>createDataAlert</invocationTarget>
+            <invocationTargetType>standardInvocableAction</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>true</isIncludeInProgressIndicator>
+            <localDeveloperName>CreateDataAlert</localDeveloperName>
+            <masterLabel>Create Data Alert</masterLabel>
+            <progressIndicatorMessage>Setting up the notification</progressIndicatorMessage>
+            <source>Analytics__CreateDataAlert</source>
+        </localActions>
+        <localDeveloperName>DataAlertManagement</localDeveloperName>
+        <masterLabel>Data Alert Management</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>VisualizationManagementCommands_16jgK000001lS6j</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Create a visualization</description>
+        <developerName>VisualizationManagementCommands_16jgK000001lS6j</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.</description>
+            <developerName>instruction0_179gK000001u0RP</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179gK000001u0RP</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>CreateVisualizationCommands_179gK000001u0RP</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>CreateVisualizationCommands_179gK000001u0RP</fullName>
+            <description>Create a visualization from user&apos;s request</description>
+            <developerName>CreateVisualizationCommands_179gK000001u0RP</developerName>
+            <invocationTarget>createVisualizationCommands</invocationTarget>
+            <invocationTargetType>standardInvocableAction</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>true</isIncludeInProgressIndicator>
+            <localDeveloperName>CreateVisualizationCommands</localDeveloperName>
+            <masterLabel>Create Visualization</masterLabel>
+            <progressIndicatorMessage>Creating your visualization</progressIndicatorMessage>
+            <source>Analytics__CreateVisualizationCommands</source>
+        </localActions>
+        <localDeveloperName>VisualizationManagementCommands</localDeveloperName>
+        <masterLabel>Visualization Management Commands</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>off_topic_16jgK000001lS6j</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Redirect conversation to relevant topics when user request goes off-topic</description>
+        <developerName>off_topic_16jgK000001lS6j</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.</description>
+            <developerName>instruction0_179gK000001u0RS</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179gK000001u0RS</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localDeveloperName>off_topic</localDeveloperName>
+        <masterLabel>Off Topic</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>topic_selector_16jgK000001lS6j</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Welcome the user and determine the appropriate topic based on user input</description>
+        <developerName>topic_selector_16jgK000001lS6j</developerName>
+        <genAiPluginInstructions>
+            <description>You are an AI Agent.</description>
+            <developerName>instruction0_179gK000001u0RT</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179gK000001u0RT</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localDeveloperName>topic_selector</localDeveloperName>
+        <masterLabel>Topic Selector</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <masterLabel>VizVoice</masterLabel>
+    <plannerType>Atlas__ConcurrentMultiAgentOrchestration</plannerType>
+</GenAiPlannerBundle>

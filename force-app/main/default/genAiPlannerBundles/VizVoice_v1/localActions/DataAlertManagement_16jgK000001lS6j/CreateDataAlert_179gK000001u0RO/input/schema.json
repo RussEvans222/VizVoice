@@ -1,0 +1,43 @@
+{
+  "required" : [ "conversationContext" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "targetEntityId" : {
+      "title" : "Target Entity Id",
+      "description" : "ID or API name of the dashboard, viz, or metric on the page",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "targetEntityType" : {
+      "title" : "Target Entity Type",
+      "description" : "One of dashboard, metric, viz",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "targetEntityState" : {
+      "title" : "Target Entity State",
+      "description" : "Entity-specific state, like dashboard filters",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "conversationContext" : {
+      "title" : "Conversation Context",
+      "description" : "Context of the conversation session",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "savedDataAlertId" : {
+      "title" : "Saved Data Alert Id",
+      "description" : "Optional parameter, the ID of the data alert that the user wants to refine",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType",
+  "lightning:textIndexed" : true
+}

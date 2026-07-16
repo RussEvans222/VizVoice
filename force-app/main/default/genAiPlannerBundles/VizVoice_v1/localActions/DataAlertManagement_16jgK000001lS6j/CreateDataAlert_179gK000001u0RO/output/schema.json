@@ -1,0 +1,31 @@
+{
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "clarificationNeeded" : {
+      "title" : "Clarification Needed",
+      "description" : "If clarification is needed, this will contain a question for the user",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "explanatoryReasoning" : {
+      "title" : "Explanatory Reasoning",
+      "description" : "Underlying reasoning that was performed in order to generate the data alert configuration",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "savedDataAlertId" : {
+      "title" : "Saved Data Alert Id",
+      "description" : "The ID of the saved data alert",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : true
+    }
+  },
+  "lightning:type" : "lightning__objectType",
+  "lightning:textIndexed" : true
+}

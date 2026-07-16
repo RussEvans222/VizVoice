@@ -1,0 +1,39 @@
+{
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "answerText" : {
+      "title" : "{!$Label.CreateVisualizationCommandsAction.answerLabel}",
+      "description" : "{!$Label.CreateVisualizationCommandsAction.answerDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "visualizationCommands" : {
+      "title" : "{!$Label.CreateVisualizationCommandsAction.visualizationCommandsLabel}",
+      "description" : "{!$Label.CreateVisualizationCommandsAction.visualizationCommandsDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : false
+    },
+    "answerArtifacts" : {
+      "title" : "{!$Label.CreateVisualizationCommandsAction.answerArtifactsLabel}",
+      "description" : "{!$Label.CreateVisualizationCommandsAction.answerArtifactsDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : false
+    },
+    "analyticsTabId" : {
+      "title" : "{!$Label.CreateVisualizationCommandsAction.analyticsTabIdLabel}",
+      "description" : "{!$Label.CreateVisualizationCommandsAction.analyticsTabIdDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : true
+    }
+  },
+  "lightning:type" : "lightning__objectType",
+  "lightning:textIndexed" : true
+}

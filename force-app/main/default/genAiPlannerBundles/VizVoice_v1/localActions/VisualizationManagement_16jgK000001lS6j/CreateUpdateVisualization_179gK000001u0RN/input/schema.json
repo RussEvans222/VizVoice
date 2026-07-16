@@ -1,0 +1,50 @@
+{
+  "required" : [ "analyticsTabId", "targetEntityId", "targetEntityType", "conversationContext", "userUtterance" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "analyticsTabId" : {
+      "title" : "{!$Label.CreateUpdateVisualizationAction.analyticsTabIdLabel}",
+      "description" : "{!$Label.CreateUpdateVisualizationAction.analyticsTabIdDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "targetEntityId" : {
+      "title" : "{!$Label.CreateUpdateVisualizationAction.targetEntityIdLabel}",
+      "description" : "{!$Label.CreateUpdateVisualizationAction.targetEntityIdDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "targetEntityType" : {
+      "title" : "{!$Label.CreateUpdateVisualizationAction.targetEntityTypeLabel}",
+      "description" : "{!$Label.CreateUpdateVisualizationAction.targetEntityTypeDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "targetEntityState" : {
+      "title" : "{!$Label.CreateUpdateVisualizationAction.targetEntityStateLabel}",
+      "description" : "{!$Label.CreateUpdateVisualizationAction.targetEntityStateDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "conversationContext" : {
+      "title" : "{!$Label.CreateUpdateVisualizationAction.conversationContextLabel}",
+      "description" : "{!$Label.CreateUpdateVisualizationAction.conversationContextDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "userUtterance" : {
+      "title" : "{!$Label.CreateUpdateVisualizationAction.utteranceLabel}",
+      "description" : "{!$Label.CreateUpdateVisualizationAction.utteranceDescription}",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType",
+  "lightning:textIndexed" : true
+}
