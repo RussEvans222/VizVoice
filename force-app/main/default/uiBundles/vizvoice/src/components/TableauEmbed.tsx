@@ -23,16 +23,14 @@ interface TableauEmbedProps {
 declare const SFDC_ENV: { orgUrl?: string } | undefined;
 
 /**
- * Normalize whatever host the bundle sees into the Lightning domain the
- * Analytics Embedding SDK requires. SFDC_ENV.orgUrl is documented to already be
- * the lightning.force.com URL, but the bundle is served from *.salesforce.app,
- * so we defensively rewrite the known alternate suffixes just in case.
+ * Keep the org host canonical for embedding/auth flows.
+ *
+ * Rewriting to lightning.force.com can create cross-origin session drift in
+ * some Hyperforce surfaces where auth endpoints (csrf/ssot) run on
+ * *.my.salesforce.com. We preserve SFDC_ENV.orgUrl and only normalize trailing slash.
  */
-function toLightningUrl(orgUrl: string): string {
-  return orgUrl
-    .replace(/\/+$/, '')
-    .replace('.salesforce.app', '.lightning.force.com')
-    .replace('.my.salesforce.com', '.lightning.force.com');
+function toCanonicalOrgUrl(orgUrl: string): string {
+  return orgUrl.replace(/\/+$/, '');
 }
 
 /**
@@ -44,7 +42,7 @@ function toLightningUrl(orgUrl: string): string {
  * API name, NOT its id.
  */
 function buildViewerUrl(orgUrl: string, dash: Dashboard): string {
-  const base = toLightningUrl(orgUrl);
+  const base = toCanonicalOrgUrl(orgUrl);
   return `${base}/tableau/dashboard/${encodeURIComponent(dash.name)}/view`;
 }
 
@@ -141,8 +139,8 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
     host.replaceChildren();
 
     async function embed() {
-      const lightningUrl = toLightningUrl(orgUrl);
-      const ok = await initEmbeddingSdk(lightningUrl);
+      const canonicalOrgUrl = toCanonicalOrgUrl(orgUrl);
+      const ok = await initEmbeddingSdk(canonicalOrgUrl);
       if (cancelled) return;
       if (!ok) {
         setEmbedFailed(true);
@@ -152,7 +150,7 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
         const dashboard = new AnalyticsDashboard({
           parentIdOrElement: host,
           idOrApiName: selected!.name,
-          orgUrl: lightningUrl,
+          orgUrl: canonicalOrgUrl,
           width: '100%',
           height: '100%',
         });

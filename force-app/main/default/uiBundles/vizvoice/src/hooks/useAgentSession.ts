@@ -23,15 +23,6 @@ export interface UseAgentSessionReturn {
   sendMessage: (utterance: string, opts?: SendMessageOptions) => Promise<AgentResponse>;
 }
 
-interface ActionInvokeResult {
-  isSuccess?: boolean;
-  errors?: Array<{ message?: string; code?: string }>;
-  outputValues?: {
-    sessionId?: string;
-    agentResponse?: string;
-  };
-}
-
 function getConfigurationError(): string | null {
   if (!AGENT_API_NAME?.trim()) {
     return 'Missing AGENT_API_NAME configuration. Set a valid Agent API Name in constants.ts.';
@@ -40,9 +31,9 @@ function getConfigurationError(): string | null {
 }
 
 function getInvocableActionEndpoint(): string {
-  return `/services/data/v64.0/actions/custom/generateAiAgentResponse/${encodeURIComponent(
-    AGENT_API_NAME,
-  )}`;
+  // Use Apex REST proxy instead of direct action call
+  // UI Bundles can't call org APIs directly — they need an authenticated proxy
+  return `/services/apexrest/vizvoice/session`;
 }
 
 
@@ -75,15 +66,6 @@ function isInvalidSessionResponse(bodyText: string): boolean {
   );
 }
 
-function buildContextPreamble(variables: Record<string, string>): string {
-  if (!variables || Object.keys(variables).length === 0) return '';
-  const parts: string[] = [];
-  if (variables.targetEntityId) parts.push(`Dashboard: ${variables.targetEntityId}`);
-  if (variables.analyticsTabId) parts.push(`Tab: ${variables.analyticsTabId}`);
-  if (variables.targetEntityState) parts.push(`Current filters: ${variables.targetEntityState}`);
-  return parts.length > 0 ? `[Context — ${parts.join('; ')}]` : '';
-}
-
 export function useAgentSession(): UseAgentSessionReturn {
   // The in-org agent bridge is stateless from the client's side: there is no
   // pre-flight "create session" call. The server mints a sessionId on the first
@@ -113,27 +95,23 @@ export function useAgentSession(): UseAgentSessionReturn {
       const sessionId = sessionIdRef.current;
       log.info('sendMessage:', utterance, '| sessionId =', sessionId, '| variables =', variables);
 
-      // Call the generateAiAgentResponse invocable action directly via the Actions API.
-      // UI Bundles CAN call invocable actions via the Data SDK authenticated fetch.
-      const userMessage = buildContextPreamble(variables)
-        ? `[Context — ${Object.entries(variables).map(([k,v]) => `${k}: ${v}`).join('; ')}]\n\n${utterance}`
-        : utterance;
-      const brevityDirective =
-        '[Answer for a voice assistant: lead with the single most important number, ' +
-        'keep it to at most 2 short sentences, no lists or markdown, and never use ' +
-        'visual phrases like "as you can see" or "the chart shows".]';
-      const fullMessage = `${brevityDirective}\n\n${userMessage}`;
-
-      const input: Record<string, unknown> = { userMessage: fullMessage };
-      if (sessionId) input.sessionId = sessionId;
+      // Call the Apex REST proxy endpoint — it handles Named Credential auth
+      // and forwards to the agent via generateAiAgentResponse action.
+      // Apex proxy expects: { message: { role, content }, variables, sessionId }
+      const payload: Record<string, unknown> = {
+        message: {
+          role: 'User',
+          content: utterance
+        },
+        variables
+      };
+      if (sessionId) payload.sessionId = sessionId;
 
       const endpoint = getInvocableActionEndpoint();
       let res = await sfFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          inputs: [input]
-        }),
+        body: JSON.stringify(payload),
       });
 
       log.info('sendMessage: response status =', res.status);
@@ -146,9 +124,7 @@ export function useAgentSession(): UseAgentSessionReturn {
           res = await sfFetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              inputs: [input]
-            }),
+            body: JSON.stringify(payload),
           });
           if (!res.ok) {
             text = await res.text();
@@ -171,44 +147,30 @@ export function useAgentSession(): UseAgentSessionReturn {
       const rawBody = await res.json();
       log.debug('sendMessage: raw response =', rawBody);
 
-      // Parse the invocable action response:
-      // [{ outputValues: { sessionId: "...", agentResponse: "{\"type\":\"Text\",\"value\":\"...\"}" } }]
-      if (!Array.isArray(rawBody) || rawBody.length === 0) {
-        const message = 'Invalid agent response format from generateAiAgentResponse.';
+      // Parse Apex proxy response:
+      // { sessionId: "...", message: { role: "Agent", content: "..." } }
+      if (!rawBody || typeof rawBody !== 'object') {
+        const message = 'Invalid agent response format from proxy.';
         setError(message);
         throw new Error(message);
       }
 
-      const firstResult = rawBody[0] as ActionInvokeResult;
-      if (firstResult.isSuccess === false) {
-        const errorText =
-          firstResult.errors?.map((e) => e.message || e.code).filter(Boolean).join('; ') ||
-          'Unknown agent invocation error';
-        const message = `Agent invocation failed: ${errorText}`;
-        setError(message);
-        throw new Error(message);
+      const newSessionId = (rawBody as Record<string, unknown>).sessionId;
+      if (newSessionId && typeof newSessionId === 'string') {
+        sessionIdRef.current = newSessionId;
       }
 
-      const outputValues = firstResult.outputValues || {};
-      const newSessionId = outputValues.sessionId;
-      if (newSessionId) sessionIdRef.current = newSessionId;
-
-      // agentResponse is a nested JSON string — unwrap it
+      const message = (rawBody as Record<string, unknown>).message;
       let answer = '';
-      const agentResponse = outputValues.agentResponse;
-      if (agentResponse) {
-        try {
-          const parsed = JSON.parse(agentResponse);
-          answer = parsed.value || parsed.message || parsed.error || agentResponse;
-        } catch {
-          answer = String(agentResponse);
-        }
+      if (message && typeof message === 'object') {
+        const content = (message as Record<string, unknown>).content;
+        if (content) answer = String(content);
       }
 
       if (!answer.trim()) {
-        const message = 'Agent returned an empty response.';
-        setError(message);
-        throw new Error(message);
+        const errorMessage = 'Agent returned an empty response.';
+        setError(errorMessage);
+        throw new Error(errorMessage);
       }
 
       log.info('sendMessage: answer =', answer.slice(0, 120));

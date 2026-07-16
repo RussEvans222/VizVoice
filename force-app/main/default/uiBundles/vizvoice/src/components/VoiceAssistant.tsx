@@ -26,8 +26,8 @@ interface VoiceAssistantProps {
 }
 
 const WELCOME_MESSAGE =
-  "Hello! I'm VizVoice, your voice assistant for exploring this dashboard. " +
-  'Press Alt+V or tap the microphone to speak. Ask me about the data you see.';
+  "Hello! I'm VizVoice, your voice assistant for exploring dashboard analytics. " +
+  'Press Alt+V or tap the microphone to speak. Ask me questions about transit data, cancellations, and line performance.';
 
 export function VoiceAssistant({
   agentLabel = 'VizVoice',
@@ -237,12 +237,23 @@ export function VoiceAssistant({
         </div>
       )}
 
+      {/* Screen reader instructions banner */}
+      <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+        <p className="text-sm text-blue-900">
+          <strong>Accessibility:</strong> Press Alt+V to activate voice assistant.
+          Ask questions about dashboard data and receive spoken answers.
+          Optimized for screen readers—responses use clear, descriptive language without visual references.
+        </p>
+      </div>
+
       {/* Messages */}
       <div
         className="flex-1 overflow-y-auto p-4 space-y-4"
         role="log"
         aria-label="Conversation history"
-        aria-live="polite"
+        aria-live="assertive"
+        aria-atomic="false"
+        aria-relevant="additions text"
       >
         {messages.map((message) => (
           <div
