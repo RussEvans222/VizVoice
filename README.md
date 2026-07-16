@@ -268,6 +268,36 @@ The sample app includes an Agentforce Conversation Client (ACC) placeholder comp
 - **Agentforce Vibes:** Generate agent metadata with the extension, then deploy it to the org.
 - **Agentforce Builder:** Create the agent in the UI. See [Set Up Your Agent](https://help.salesforce.com/s/articleView?id=ai.agent_parent_setup.htm&type=5).
 
+### Wiring Model (VizVoice)
+
+VizVoice supports two agent wiring models:
+
+- `AGENT_API_NAME` (invocable action model): used by the voice assistant hook to call:
+  `/services/data/v64.0/actions/custom/generateAiAgentResponse/<AgentApiName>`
+- `AGENT_ID` (ACC model): used only when ACC fallback mode is enabled, and must be an 18-character Salesforce record ID (`0Xx...`) from `BotDefinition.Id`.
+
+Configuration lives in:
+
+- `force-app/main/default/uiBundles/vizvoice/src/lib/constants.ts`
+
+Verify `AGENT_ID`:
+
+```bash
+sf data query \
+  --query "SELECT Id, DeveloperName, MasterLabel FROM BotDefinition WHERE DeveloperName = 'VizVoice'" \
+  --target-org <alias>
+```
+
+Verify `AGENT_API_NAME` invocable action path:
+
+```bash
+sf data query \
+  --query "SELECT DeveloperName FROM BotDefinition WHERE DeveloperName = 'VizVoice'" \
+  --target-org <alias>
+```
+
+If the voice path fails with 4xx/5xx, confirm `AGENT_API_NAME` matches the deployed agent API name and that `generateAiAgentResponse/<AgentApiName>` is available in the target org.
+
 ---
 
 ## Local Development

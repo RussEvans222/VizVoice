@@ -1,0 +1,195 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { TableauEmbed } from '@/components/TableauEmbed';
+import { VoiceController, SHORTCUT_HINT } from '@/components/VoiceController';
+import { LiveTranscript, Message } from '@/components/LiveTranscript';
+import { useAgentSession } from '@/hooks/useAgentSession';
+import { useSpeechInput } from '@/hooks/useSpeechInput';
+import { useSpeechOutput } from '@/hooks/useSpeechOutput';
+import { AgentforceConversationClient } from '@salesforce/ui-bundle-template-feature-react-agentforce-conversation-client';
+
+export default function VizVoicePage() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [analyticsTabId, setAnalyticsTabId] = useState('');
+  const [dashboardLabel, setDashboardLabel] = useState('');
+  // Hands-free mode: after the agent finishes speaking, the mic re-opens
+  // automatically so the user can reply without pressing the shortcut again.
+  const [handsFree, setHandsFree] = useState(true);
+  const micButtonRef = useRef<HTMLButtonElement>(null);
+  // Ref mirror of handsFree so the async turn cycle reads the latest value
+  // without needing to be re-created (and without stale-closure bugs).
+  const handsFreeRef = useRef(handsFree);
+  handsFreeRef.current = handsFree;
+
+  const { ready: agentReady, error: agentError, sendMessage } = useAgentSession();
+  const { state: speechState, start: startListening, stop: stopListening, supported: sttSupported } = useSpeechInput();
+  const { speak, cancel: cancelSpeech } = useSpeechOutput();
+
+  // Stable callback for TableauEmbed.onLoad. Only reacts when the dashboard
+  // label actually changes — otherwise a re-fire (e.g. embed re-render) would
+  // reset the greeting guard and cause the agent to greet/read twice.
+  const handleDashboardLoad = useCallback((tabId: string, label: string) => {
+    setAnalyticsTabId(tabId);
+    setDashboardLabel((prev) => {
+      if (prev !== label) greetedRef.current = false;
+      return label;
+    });
+  }, []);
+
+  const addMessage = useCallback((role: 'user' | 'agent', text: string) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2)}`, role, text },
+    ]);
+  }, []);
+
+  // Global voice shortcut. Use e.code (physical key) not e.key, because on macOS
+  // Option+V emits the character "√" — so `e.key === 'v'` would never match. e.code
+  // is keyboard-layout independent and fires for Alt (Windows/Linux) and Option (Mac).
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.altKey && e.code === 'KeyV') {
+        e.preventDefault();
+        micButtonRef.current?.click();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // Agent error → show in transcript
+  useEffect(() => {
+    if (agentError) {
+      addMessage('agent', `Connection error: ${agentError}`);
+    }
+  }, [agentError, addMessage]);
+
+  // Greeting fires ONCE and is spoken LOCALLY (no agent round-trip) so the app
+  // feels instant on load instead of hanging several seconds on a cold agent call.
+  // The agent only engages on the first real question. The greeting waits for the
+  // dashboard label so it can name the dashboard; a fallback timer allows a generic
+  // greeting if no dashboard loads. Voice stays decoupled from the visual embed —
+  // this waits on the dashboard *list* fetch, not the iframe render.
+  const greetedRef = useRef(false);
+  const [greetFallback, setGreetFallback] = useState(false);
+  useEffect(() => {
+    if (dashboardLabel) return; // label arrived — no fallback needed
+    const t = window.setTimeout(() => setGreetFallback(true), 4000);
+    return () => window.clearTimeout(t);
+  }, [dashboardLabel]);
+
+  useEffect(() => {
+    if (!agentReady || greetedRef.current) return;
+    // Hold the greeting until we have a dashboard label, unless the fallback timer
+    // has fired (no dashboard is going to load).
+    if (!dashboardLabel && !greetFallback) return;
+    greetedRef.current = true;
+
+    async function greet() {
+      // Canned, instant greeting — spoken immediately with no network call.
+      const greeting = dashboardLabel
+        ? `Welcome. The ${dashboardLabel} dashboard is loaded. Ask me anything about it — for example, what's the on-time performance, or which line has the most delays.`
+        : `Welcome to VizVoice. Ask me anything about your transit data by voice — for example, what's the on-time performance, or which line has the most delays.`;
+      addMessage('agent', greeting);
+      await speak(greeting);
+      micButtonRef.current?.focus();
+    }
+    greet();
+  }, [agentReady, dashboardLabel, greetFallback, addMessage, speak]);
+
+  const handleActivate = useCallback(async () => {
+    if (!agentReady) {
+      await speak('Please wait — the assistant is still connecting.');
+      return;
+    }
+    if (speechState === 'listening') {
+      stopListening();
+      return;
+    }
+
+    cancelSpeech();
+    let utterance = '';
+    try {
+      utterance = await startListening();
+    } catch {
+      return;
+    }
+
+    if (!utterance.trim()) {
+      micButtonRef.current?.focus();
+      return;
+    }
+
+    addMessage('user', utterance);
+
+    try {
+      const { answer } = await sendMessage(utterance, { analyticsTabId });
+      addMessage('agent', answer);
+      await speak(answer);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An error occurred.';
+      addMessage('agent', msg);
+      await speak(msg);
+    }
+
+    // Return focus to mic button after response so the shortcut immediately re-activates.
+    micButtonRef.current?.focus();
+
+    // Hands-free: the agent has finished speaking, so re-open the mic for the reply.
+    // A short delay lets the TTS audio tail fully stop before recognition starts,
+    // avoiding the speaker's own voice being picked up. Re-check the ref in case the
+    // user toggled hands-free off mid-turn.
+    if (handsFreeRef.current) {
+      window.setTimeout(() => {
+        if (handsFreeRef.current) micButtonRef.current?.click();
+      }, 400);
+    }
+  }, [
+    agentReady,
+    speechState,
+    analyticsTabId,
+    startListening,
+    stopListening,
+    cancelSpeech,
+    sendMessage,
+    addMessage,
+    speak,
+  ]);
+
+  // Expose test hook for browser console round-trip validation
+  useEffect(() => {
+    (window as any).vizvoice = {
+      sendMessage: (utterance: string) =>
+        sendMessage(utterance, { analyticsTabId }).then(({ answer }) => {
+          addMessage('user', utterance);
+          addMessage('agent', answer);
+          return answer;
+        }),
+    };
+    return () => {
+      delete (window as any).vizvoice;
+    };
+  }, [sendMessage, analyticsTabId, addMessage]);
+
+  return (
+    <div className="flex h-full w-full bg-white">
+      {/* Left panel: Tableau embed (70%) */}
+      <main className="flex-[7] min-w-0 relative bg-slate-100">
+        <TableauEmbed onLoad={handleDashboardLoad} className="absolute inset-0" />
+      </main>
+
+      {/* Right panel: Agentforce Chat (30%) */}
+      <aside
+        className=”flex-[3] min-w-0 flex flex-col border-l border-slate-200 bg-white”
+        aria-label=”VizVoice voice assistant”
+      >
+        <AgentforceConversationClient
+          agentId=”0XxgK000001rUH7SAM”
+          inline={true}
+          width=”100%”
+          height=”100%”
+          agentLabel=”VizVoice”
+        />
+      </aside>
+    </div>
+  );
+}
