@@ -48,21 +48,16 @@ function buildViewerUrl(orgUrl: string, dash: Dashboard): string {
 
 // Initialize the Analytics SDK at most once per app lifetime.
 //
-// The SDK REQUIRES an authCredential — passing only orgUrl fails with
-// "User configuration is missing or invalid". Per the SDK docs, when the user
-// already has an established Salesforce session (which is true here — the UI
-// Bundle is served inside an authenticated Lightning session), you pass the
-// Lightning orgUrl itself AS the authCredential:
-//   { orgUrl, authCredential: orgUrl }
-// This rides the existing session with NO frontdoor URL minted into JS. If the
-// org rejects it (e.g. session not usable cross-frame), init resolves non-SUCCESS
-// and we fall back to the accessible open-in-new-tab link.
+// Per Salesforce docs (https://developer.salesforce.com/docs/analytics/sdk/guide/sdk-access-token.md),
+// the SDK requires a FRONTDOOR URL as the authCredential — not just the orgUrl.
+// We fetch a short-lived frontdoor URL from Apex via /services/oauth2/singleaccess,
+// then pass it to the SDK for authentication.
 let sdkInitPromise: Promise<boolean> | null = null;
-function initEmbeddingSdk(orgUrl: string): Promise<boolean> {
+async function initEmbeddingSdk(orgUrl: string, frontdoorUrl: string): Promise<boolean> {
   if (!sdkInitPromise) {
     sdkInitPromise = (async () => {
-      const config: AnalyticsSdkConfig = { orgUrl, authCredential: orgUrl };
-      log.info('[TableauEmbed] initializeAnalyticsSdk (established session) orgUrl =', orgUrl);
+      const config: AnalyticsSdkConfig = { orgUrl, authCredential: frontdoorUrl };
+      log.info('[TableauEmbed] initializeAnalyticsSdk with frontdoor URL');
       const res = await initializeAnalyticsSdk(config);
       const ok = res.status === Status.SUCCESS;
       if (!ok) log.error('[TableauEmbed] SDK init not successful:', res.status, res.message);
@@ -73,6 +68,30 @@ function initEmbeddingSdk(orgUrl: string): Promise<boolean> {
     });
   }
   return sdkInitPromise;
+}
+
+async function fetchFrontdoorUrl(): Promise<string> {
+  try {
+    const sdk = await createDataSDK();
+    if (!sdk.fetch) {
+      throw new Error('Data SDK fetch unavailable');
+    }
+    // Call Apex REST endpoint to generate frontdoor URL via /services/oauth2/singleaccess
+    const res = await sdk.fetch('/services/apexrest/vizvoice/frontdoor', {
+      method: 'GET',
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Frontdoor URL fetch failed (${res.status}): ${text}`);
+    }
+    const data = await res.json();
+    const frontdoorUrl = (data as { frontdoorUrl: string }).frontdoorUrl;
+    log.info('[TableauEmbed] Got frontdoor URL');
+    return frontdoorUrl;
+  } catch (e: any) {
+    log.error('[TableauEmbed] fetchFrontdoorUrl error:', e);
+    throw e;
+  }
 }
 
 export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
@@ -139,14 +158,18 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
     host.replaceChildren();
 
     async function embed() {
-      const canonicalOrgUrl = toCanonicalOrgUrl(orgUrl);
-      const ok = await initEmbeddingSdk(canonicalOrgUrl);
-      if (cancelled) return;
-      if (!ok) {
-        setEmbedFailed(true);
-        return;
-      }
       try {
+        const canonicalOrgUrl = toCanonicalOrgUrl(orgUrl);
+        const frontdoorUrl = await fetchFrontdoorUrl();
+        if (cancelled) return;
+
+        const ok = await initEmbeddingSdk(canonicalOrgUrl, frontdoorUrl);
+        if (cancelled) return;
+        if (!ok) {
+          setEmbedFailed(true);
+          return;
+        }
+
         const dashboard = new AnalyticsDashboard({
           parentIdOrElement: host,
           idOrApiName: selected!.name,
@@ -162,7 +185,7 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
         await dashboard.render();
         if (!cancelled) setEmbedReady(true);
       } catch (e) {
-        log.error('[TableauEmbed] dashboard render failed:', e);
+        log.error('[TableauEmbed] embed failed:', e);
         if (!cancelled) setEmbedFailed(true);
       }
     }

@@ -14,6 +14,7 @@
  *
  * Endpoints:
  *   GET    /services/apexrest/vizvoice/dashboards      → list Tableau dashboards
+ *   GET    /services/apexrest/vizvoice/frontdoor       → generate frontdoor URL for embedding
  *   POST   /services/apexrest/vizvoice/session         → open a conversation (first turn)
  *   POST   /services/apexrest/vizvoice/message         → send a message (subsequent turns)
  *   DELETE /services/apexrest/vizvoice/session/{id}    → (no-op; session is stateless here)
@@ -47,6 +48,8 @@ global without sharing class VizVoiceAgentProxy {
         try {
             if (path == 'dashboards') {
                 listDashboards(res);
+            } else if (path == 'frontdoor') {
+                generateFrontdoorUrl(res);
             } else {
                 res.statusCode = 404;
                 res.responseBody = Blob.valueOf('{"error":"Unknown GET path: ' + path + '"}');
@@ -99,6 +102,47 @@ global without sharing class VizVoiceAgentProxy {
         res.statusCode = hr2.getStatusCode();
         // Relay the body directly — it's already {"dashboards":[...]}
         res.responseBody = hr2.getBodyAsBlob();
+    }
+
+    /**
+     * Generate a frontdoor URL for Tableau Next embedding SDK authentication.
+     *
+     * Per Salesforce docs (https://developer.salesforce.com/docs/analytics/sdk/guide/sdk-access-token.md),
+     * the Analytics Embedding SDK requires a frontdoor URL as the authCredential.
+     *
+     * This calls /services/oauth2/singleaccess via the Named Credential, which uses
+     * the External Credential's OAuth token (not UserInfo.getSessionId(), which doesn't
+     * work for UI Bundles).
+     */
+    private static void generateFrontdoorUrl(RestResponse res) {
+        HttpRequest hr = new HttpRequest();
+        hr.setMethod('POST');
+        // Call via Named Credential - uses External Credential's OAuth access token
+        hr.setEndpoint(NAMED_CRED + '/services/oauth2/singleaccess');
+        hr.setHeader('Content-Type', 'application/x-www-form-urlencoded');
+        hr.setHeader('Accept', 'application/json');
+        hr.setBody('');
+        hr.setTimeout(30000);
+
+        HttpResponse hr2 = new Http().send(hr);
+        res.statusCode = hr2.getStatusCode();
+
+        if (hr2.getStatusCode() != 200) {
+            res.responseBody = Blob.valueOf('{"error":"Frontdoor generation failed: ' + hr2.getBody() + '"}');
+            return;
+        }
+
+        try {
+            Map<String, Object> responseData =
+                (Map<String, Object>) JSON.deserializeUntyped(hr2.getBody());
+            String frontdoorUrl = (String) responseData.get('frontdoor_uri');
+            res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, String>{
+                'frontdoorUrl' => frontdoorUrl
+            }));
+        } catch (Exception e) {
+            res.statusCode = 500;
+            res.responseBody = Blob.valueOf('{"error":"Failed to parse frontdoor response: ' + e.getMessage() + '"}');
+        }
     }
 
     /**
