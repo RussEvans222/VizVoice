@@ -7,6 +7,7 @@ import {
 } from '@salesforce/analytics-embedding-sdk';
 import { createDataSDK } from '@salesforce/platform-sdk';
 import { log } from '@/lib/logger';
+import { TransitDashboardMock } from '@/components/TransitDashboardMock';
 
 interface Dashboard {
   name: string;   // API name, e.g. "New_Dashboard"
@@ -262,30 +263,24 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
         )}
 
         {embedFailed && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 gap-4">
-            <div className="text-6xl" aria-hidden="true">📊</div>
-            <div>
-              <p className="text-lg text-slate-800 font-semibold">
-                {selected ? selected.label : 'VizVoice'}
-              </p>
-              <p className="mt-1 text-sm text-slate-500 max-w-md">
-                The dashboard couldn’t be embedded here, but you can still ask VizVoice
-                about your data by voice — and open the full interactive dashboard in a new tab.
-              </p>
-            </div>
+          <div className="absolute inset-0 flex flex-col overflow-hidden">
+            <TransitDashboardMock label={selected?.label ?? 'TransitData'} />
             {viewerUrl && (
-              <a
-                href={viewerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-md bg-[#0176D3] px-4 py-2 text-sm font-medium text-white shadow hover:bg-[#0265B3] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#0176D3]"
-                aria-label={`Open the ${selected?.label ?? 'dashboard'} in a new browser tab`}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Open “{selected?.label ?? 'dashboard'}” in a new tab
-              </a>
+              <div className="shrink-0 flex items-center justify-end gap-2 px-4 py-1.5 border-t border-slate-200 bg-slate-50">
+                <span className="text-xs text-slate-400">Live dashboard:</span>
+                <a
+                  href={viewerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-[#0176D3] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0176D3] rounded"
+                  aria-label={`Open ${selected?.label ?? 'dashboard'} in a new tab`}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Open in Tableau
+                </a>
+              </div>
             )}
           </div>
         )}
