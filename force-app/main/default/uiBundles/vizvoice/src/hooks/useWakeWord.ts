@@ -76,10 +76,11 @@ export function useWakeWord(onWake: () => void): UseWakeWordReturn {
     };
 
     recognition.onend = () => {
-      // Restart unless explicitly deactivated or paused for main STT
+      // Restart unless explicitly deactivated or paused for main STT.
+      // 500ms gap lets the browser fully release the mic before we
+      // re-open it — prevents the "recording dot stays on, no audio" bug.
       if (activeRef.current && !pausedRef.current) {
-        // Small gap so browsers don't rate-limit us
-        setTimeout(startLoop, 300);
+        setTimeout(startLoop, 500);
       }
     };
 

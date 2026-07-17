@@ -53,6 +53,9 @@ export function VoiceAssistant({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSpokenWelcome = useRef(false);
   const textInputRef = useRef<HTMLInputElement>(null);
+  // Ref so handleWake always calls the latest handleVoiceInteraction
+  // without being stale-captured in the useWakeWord callback closure.
+  const voiceInteractionRef = useRef<() => void>(() => {});
 
   const { sendMessage: sendToAgent, ready: agentReady, error: agentError } = useAgentSession();
   const { state: speechState, interimTranscript, start: startListening, stop: stopListening, supported: sttSupported } = useSpeechInput();
@@ -160,19 +163,13 @@ export function VoiceAssistant({
     }
   }, [speechState, isProcessing, startListening, stopListening, cancelSpeech, handleQuery, speak, ttsSupported]);
 
-  // Wake word — fires when "Hey VizVoice" is detected
+  // Wake word — fires when "Hey VizVoice" is detected.
+  // Uses voiceInteractionRef so this callback is never stale even though
+  // useWakeWord captures it once at mount time.
   const handleWake = useCallback(() => {
     log.info('Wake word detected');
-    // Brief earcon-like spoken cue then immediately start recording
-    if (ttsSupported) {
-      const utterance = new SpeechSynthesisUtterance('Listening');
-      utterance.volume = 0.6;
-      utterance.onend = () => handleVoiceInteraction();
-      window.speechSynthesis.speak(utterance);
-    } else {
-      handleVoiceInteraction();
-    }
-  }, [ttsSupported, handleVoiceInteraction]);
+    voiceInteractionRef.current();
+  }, []); // stable — reads ref at call time, not at definition time
 
   const { state: wakeState, activate: activateWake, deactivate: deactivateWake, supported: wakeSupported } = useWakeWord(handleWake);
 
@@ -181,6 +178,11 @@ export function VoiceAssistant({
     if (wakeSupported) activateWake();
     return () => deactivateWake();
   }, [wakeSupported, activateWake, deactivateWake]);
+
+  // Keep ref in sync with latest handler
+  useEffect(() => {
+    voiceInteractionRef.current = handleVoiceInteraction;
+  }, [handleVoiceInteraction]);
 
   // Alt+V keyboard shortcut
   useEffect(() => {

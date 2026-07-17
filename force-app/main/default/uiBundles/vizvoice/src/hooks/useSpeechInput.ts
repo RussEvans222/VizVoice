@@ -4,13 +4,13 @@ export type SpeechInputState = 'idle' | 'listening' | 'processing';
 
 export interface UseSpeechInputReturn {
   state: SpeechInputState;
-  interimTranscript: string; // live partial text shown while listening
+  interimTranscript: string;
   start: () => Promise<string>;
   stop: () => void;
   supported: boolean;
 }
 
-const SILENCE_TIMEOUT_MS = 6000; // auto-stop if no speech detected after 6s
+const SILENCE_TIMEOUT_MS = 6000;
 
 function playEarcon(frequency: number, durationMs: number) {
   try {
@@ -63,89 +63,78 @@ export function useSpeechInput(): UseSpeechInputReturn {
   const start = useCallback((): Promise<string> => {
     if (!supported) return Promise.reject(new Error('SpeechRecognition not supported'));
 
-    // Pause the wake word listener so two recognizers don't fight
+    // Signal the wake word listener to release the mic.
     (window as any).__vizvoiceWakePause?.();
 
     return new Promise<string>((resolve, reject) => {
-      const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-      if (!SR) {
-        reject(new Error('SpeechRecognition not available'));
-        return;
-      }
+      // 350ms gap lets the browser fully release the mic after the wake word
+      // recognizer aborts. Without this the new recognizer opens but records
+      // nothing (shown as a blinking button with no audio captured).
+      setTimeout(() => {
+        const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+        if (!SR) { reject(new Error('SpeechRecognition not available')); return; }
 
-      const recognition = new SR();
-      recognition.lang = 'en-US';
-      recognition.interimResults = true; // show partial transcript in real time
-      recognition.maxAlternatives = 1;
-      recognitionRef.current = recognition;
-      resolveRef.current = resolve;
-      rejectRef.current = reject;
+        const recognition = new SR();
+        recognition.lang = 'en-US';
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+        recognitionRef.current = recognition;
+        resolveRef.current = resolve;
+        rejectRef.current = reject;
 
-      recognition.onstart = () => {
-        setState('listening');
-        setInterimTranscript('');
-        playEarcon(EARCON_START_HZ, 120);
-
-        // Start silence watchdog — fires if nothing heard within timeout
-        silenceTimerRef.current = setTimeout(() => {
-          recognition.stop();
-        }, SILENCE_TIMEOUT_MS);
-      };
-
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        // Reset silence watchdog on every result
-        clearSilenceTimer();
-        silenceTimerRef.current = setTimeout(() => recognition.stop(), SILENCE_TIMEOUT_MS);
-
-        let interim = '';
-        let final = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const text = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            final += text;
-          } else {
-            interim += text;
-          }
-        }
-
-        if (interim) setInterimTranscript(interim);
-
-        if (final) {
-          clearSilenceTimer();
-          setState('processing');
+        recognition.onstart = () => {
+          setState('listening');
           setInterimTranscript('');
-          resolveRef.current?.(final);
-          resolveRef.current = null;
+          playEarcon(EARCON_START_HZ, 120);
+          silenceTimerRef.current = setTimeout(() => recognition.stop(), SILENCE_TIMEOUT_MS);
+        };
+
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
+          clearSilenceTimer();
+          silenceTimerRef.current = setTimeout(() => recognition.stop(), SILENCE_TIMEOUT_MS);
+
+          let interim = '';
+          let final = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const text = event.results[i][0].transcript;
+            if (event.results[i].isFinal) { final += text; }
+            else { interim += text; }
+          }
+          if (interim) setInterimTranscript(interim);
+          if (final) {
+            clearSilenceTimer();
+            setState('processing');
+            setInterimTranscript('');
+            resolveRef.current?.(final);
+            resolveRef.current = null;
+            rejectRef.current = null;
+          }
+        };
+
+        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+          clearSilenceTimer();
+          setInterimTranscript('');
+          setState('idle');
+          (window as any).__vizvoiceWakeResume?.();
+          rejectRef.current?.(new Error(event.error));
           rejectRef.current = null;
-        }
-      };
-
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        clearSilenceTimer();
-        setInterimTranscript('');
-        setState('idle');
-        // Resume wake word listener on error
-        (window as any).__vizvoiceWakeResume?.();
-        rejectRef.current?.(new Error(event.error));
-        rejectRef.current = null;
-        resolveRef.current = null;
-      };
-
-      recognition.onend = () => {
-        clearSilenceTimer();
-        setInterimTranscript('');
-        setState('idle');
-        // Resume wake word listener after turn ends
-        (window as any).__vizvoiceWakeResume?.();
-        // If no final result fired (silence timeout), resolve with empty string
-        if (resolveRef.current) {
-          resolveRef.current('');
           resolveRef.current = null;
-          rejectRef.current = null;
-        }
-      };
+        };
 
-      recognition.start();
+        recognition.onend = () => {
+          clearSilenceTimer();
+          setInterimTranscript('');
+          setState('idle');
+          (window as any).__vizvoiceWakeResume?.();
+          if (resolveRef.current) {
+            resolveRef.current('');
+            resolveRef.current = null;
+            rejectRef.current = null;
+          }
+        };
+
+        recognition.start();
+      }, 350);
     });
   }, [supported, clearSilenceTimer]);
 
