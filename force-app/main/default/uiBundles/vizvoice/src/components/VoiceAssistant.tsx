@@ -23,8 +23,8 @@ const SESSION_STORAGE_KEY = 'vizvoice_session_id';
 
 const WELCOME_MESSAGE =
   "Hello! I'm VizVoice, your voice assistant for transit data. " +
-  "Tap 'Enable hands-free' once to start listening for the wake phrase. " +
-  "Then just say \"Hey VizVoice\" followed by your question — no button press needed. " +
+  "To enable hands-free mode, press Enter or Space now. " +
+  "After that, just say Hey VizVoice followed by your question. " +
   "You can also type your question below.";
 
 const SILENCE_RESPONSE =
@@ -44,6 +44,7 @@ export function VoiceAssistant({
   const [textInput, setTextInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSpokenWelcome = useRef(false);
+  const enableButtonRef = useRef<HTMLButtonElement>(null);
 
   // Ref so handleWake always calls the latest handleVoiceInteraction — avoids
   // stale closure: useWakeWord captures handleWake once at registration, but
@@ -203,6 +204,15 @@ export function VoiceAssistant({
     }
   }, [speechState, pauseWake]);
 
+  // Auto-focus the "Enable hands-free" button so a screen reader announces it
+  // immediately on page load and keyboard users can activate it with Enter.
+  useEffect(() => {
+    if (wakeSupported && wakeState === 'inactive') {
+      const t = setTimeout(() => enableButtonRef.current?.focus(), 300);
+      return () => clearTimeout(t);
+    }
+  }, [wakeSupported, wakeState]);
+
   // Alt+V keyboard shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -289,9 +299,10 @@ export function VoiceAssistant({
             <strong>Hands-free mode:</strong> Tap once to enable "Hey VizVoice" wake word — no button press needed after that.
           </p>
           <button
+            ref={enableButtonRef}
             onClick={activateWake}
             className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Enable hands-free wake word listening"
+            aria-label="Enable hands-free mode. Press Enter or Space to allow microphone access and start listening for Hey VizVoice."
           >
             Enable hands-free
           </button>
