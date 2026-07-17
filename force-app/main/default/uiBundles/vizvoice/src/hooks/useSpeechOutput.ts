@@ -1,5 +1,4 @@
 import { useCallback, useRef } from 'react';
-import { VISUAL_METAPHORS } from '@/lib/constants';
 import { EARCON_END_HZ } from './useSpeechInput';
 
 function playEarcon(frequency: number, durationMs: number) {
@@ -20,13 +19,30 @@ function playEarcon(frequency: number, durationMs: number) {
   }
 }
 
-function checkForVisualMetaphors(text: string): void {
-  const lower = text.toLowerCase();
-  for (const phrase of VISUAL_METAPHORS) {
-    if (lower.includes(phrase)) {
-      console.warn(`[VizVoice] Visual metaphor detected in agent response: "${phrase}"`);
-    }
+const VISUAL_METAPHOR_REPLACEMENTS: [string, string][] = [
+  ['as you can see',   ''],
+  ['the chart shows',  'the data shows'],
+  ['the bar on the left',  'the lowest value'],
+  ['the bar on the right', 'the highest value'],
+  ['the red segment',   'the largest segment'],
+  ['the green segment', 'the second segment'],
+  ['highlighted in',    ''],
+  ['colored in',        ''],
+  ['on the right',      ''],
+  ['on the left',       ''],
+  ['the top of',        'the highest value in'],
+  ['the bottom of',     'the lowest value in'],
+];
+
+function sanitizeForSpeech(text: string): string {
+  let out = text;
+  for (const [phrase, replacement] of VISUAL_METAPHOR_REPLACEMENTS) {
+    // case-insensitive replace, preserve surrounding whitespace
+    const re = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    out = out.replace(re, replacement);
   }
+  // Collapse multiple spaces left by empty replacements
+  return out.replace(/\s{2,}/g, ' ').trim();
 }
 
 export interface UseSpeechOutputReturn {
@@ -86,7 +102,7 @@ export function useSpeechOutput(): UseSpeechOutputReturn {
   const speak = useCallback(
     async (text: string): Promise<void> => {
       if (!supported) return;
-      checkForVisualMetaphors(text);
+      text = sanitizeForSpeech(text);
 
       // Cancel anything currently queued/speaking before starting the new one,
       // and mark ourselves as the active speaker so a stale onend can't resolve
