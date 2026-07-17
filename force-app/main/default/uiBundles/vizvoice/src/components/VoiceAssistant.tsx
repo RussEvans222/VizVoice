@@ -206,14 +206,31 @@ export function VoiceAssistant({
     }
   }, [speechState, pauseWake]);
 
-  // Try to auto-start wake word on mount. If mic was already granted (most
-  // users after their first visit) this works with no gesture. If blocked,
-  // useWakeWord sets wakeState='error' and we speak the instruction below.
+  // Chrome requires a user gesture before SpeechRecognition.start() works.
+  // We catch the very first interaction on the page — any keydown, click, or
+  // touch — and use that event to activate the wake word listener.
+  // A blind user pressing Tab to navigate counts; they never need to find
+  // a specific button. The listener removes itself after the first fire.
   useEffect(() => {
-    if (wakeSupported) {
+    if (!wakeSupported) return;
+
+    const activate = () => {
       activateWake();
-      return () => deactivateWake();
-    }
+      window.removeEventListener('keydown', activate, true);
+      window.removeEventListener('click',   activate, true);
+      window.removeEventListener('touchstart', activate, true);
+    };
+
+    window.addEventListener('keydown',    activate, { capture: true, once: true });
+    window.addEventListener('click',      activate, { capture: true, once: true });
+    window.addEventListener('touchstart', activate, { capture: true, once: true });
+
+    return () => {
+      window.removeEventListener('keydown', activate, true);
+      window.removeEventListener('click',   activate, true);
+      window.removeEventListener('touchstart', activate, true);
+      deactivateWake();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wakeSupported]);
 
