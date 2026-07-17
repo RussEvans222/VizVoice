@@ -63,9 +63,6 @@ export function useSpeechInput(): UseSpeechInputReturn {
   const start = useCallback((): Promise<string> => {
     if (!supported) return Promise.reject(new Error('SpeechRecognition not supported'));
 
-    // Signal the wake word listener to release the mic.
-    (window as any).__vizvoiceWakePause?.();
-
     return new Promise<string>((resolve, reject) => {
       // 350ms gap lets the browser fully release the mic after the wake word
       // recognizer aborts. Without this the new recognizer opens but records
@@ -115,7 +112,6 @@ export function useSpeechInput(): UseSpeechInputReturn {
           clearSilenceTimer();
           setInterimTranscript('');
           setState('idle');
-          (window as any).__vizvoiceWakeResume?.();
           rejectRef.current?.(new Error(event.error));
           rejectRef.current = null;
           resolveRef.current = null;
@@ -125,7 +121,6 @@ export function useSpeechInput(): UseSpeechInputReturn {
           clearSilenceTimer();
           setInterimTranscript('');
           setState('idle');
-          (window as any).__vizvoiceWakeResume?.();
           if (resolveRef.current) {
             resolveRef.current('');
             resolveRef.current = null;
