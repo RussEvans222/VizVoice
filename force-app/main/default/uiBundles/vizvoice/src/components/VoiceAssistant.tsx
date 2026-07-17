@@ -23,9 +23,12 @@ const SESSION_STORAGE_KEY = 'vizvoice_session_id';
 
 const WELCOME_MESSAGE =
   "Hello! I'm VizVoice, your voice assistant for transit data. " +
-  "To enable hands-free mode, press Enter or Space now. " +
-  "After that, just say Hey VizVoice followed by your question. " +
+  "Just say Hey VizVoice followed by your question at any time. " +
   "You can also type your question below.";
+
+const MIC_BLOCKED_MESSAGE =
+  "Microphone access is needed for hands-free use. " +
+  "Please allow microphone access in your browser, then reload the page.";
 
 const SILENCE_RESPONSE =
   "I didn't catch anything. Please say \"Hey VizVoice\" followed by your question.";
@@ -44,7 +47,6 @@ export function VoiceAssistant({
   const [textInput, setTextInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSpokenWelcome = useRef(false);
-  const enableButtonRef = useRef<HTMLButtonElement>(null);
 
   // Ref so handleWake always calls the latest handleVoiceInteraction — avoids
   // stale closure: useWakeWord captures handleWake once at registration, but
@@ -204,14 +206,23 @@ export function VoiceAssistant({
     }
   }, [speechState, pauseWake]);
 
-  // Auto-focus the "Enable hands-free" button so a screen reader announces it
-  // immediately on page load and keyboard users can activate it with Enter.
+  // Try to auto-start wake word on mount. If mic was already granted (most
+  // users after their first visit) this works with no gesture. If blocked,
+  // useWakeWord sets wakeState='error' and we speak the instruction below.
   useEffect(() => {
-    if (wakeSupported && wakeState === 'inactive') {
-      const t = setTimeout(() => enableButtonRef.current?.focus(), 300);
-      return () => clearTimeout(t);
+    if (wakeSupported) {
+      activateWake();
+      return () => deactivateWake();
     }
-  }, [wakeSupported, wakeState]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wakeSupported]);
+
+  // Speak the mic-blocked message aloud — blind user hears what to do
+  useEffect(() => {
+    if (wakeState === 'error' && ttsSupported) {
+      speak(MIC_BLOCKED_MESSAGE);
+    }
+  }, [wakeState, ttsSupported, speak]);
 
   // Alt+V keyboard shortcut
   useEffect(() => {
@@ -244,7 +255,7 @@ export function VoiceAssistant({
     if (isListening) return 'Listening… speak your question now';
     if (speechState === 'processing' || isProcessing) return 'Processing…';
     if (isHandsFreeOn) return 'Say "Hey VizVoice" to ask a question';
-    return 'Tap "Enable hands-free" or press the mic button (Alt+V)';
+    return 'Press the mic button or Alt+V to ask a question';
   };
 
   return (
@@ -292,22 +303,6 @@ export function VoiceAssistant({
         </div>
       )}
 
-      {/* Enable hands-free prompt — shown until user grants mic via a click */}
-      {wakeSupported && !isHandsFreeOn && wakeState !== 'error' && (
-        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center justify-between gap-3">
-          <p className="text-sm text-blue-900">
-            <strong>Hands-free mode:</strong> Tap once to enable "Hey VizVoice" wake word — no button press needed after that.
-          </p>
-          <button
-            ref={enableButtonRef}
-            onClick={activateWake}
-            className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Enable hands-free mode. Press Enter or Space to allow microphone access and start listening for Hey VizVoice."
-          >
-            Enable hands-free
-          </button>
-        </div>
-      )}
       {wakeState === 'error' && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-amber-800 text-sm" role="alert">
           Microphone access was denied. Please allow mic access in your browser settings, then reload the page.
