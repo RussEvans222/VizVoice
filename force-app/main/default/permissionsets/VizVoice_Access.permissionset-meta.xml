@@ -4,6 +4,10 @@
         <application>vizvoice</application>
         <visible>true</visible>
     </applicationVisibilities>
+    <applicationVisibilities>
+        <application>tableauembedtest</application>
+        <visible>true</visible>
+    </applicationVisibilities>
     <description>Grants access to the VizVoice app.</description>
     <hasActivationRequired>false</hasActivationRequired>
     <label>VizVoice Access</label>

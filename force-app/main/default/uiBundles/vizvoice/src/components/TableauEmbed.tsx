@@ -214,6 +214,13 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
   // When the live embed can't render, try the Tableau Next REST API as a
   // backup: fetch the visualization's structured spec via the same Named
   // Credential and render its fields directly instead of only a link out.
+  //
+  // Dashboards and visualizations are separate Tableau Next resources with
+  // distinct names/ids — a dashboard's API name (e.g. "New_Dashboard") is
+  // never a valid visualization id. There is no dashboard->visualization
+  // lookup endpoint exposed here, so we list all visualizations in the org
+  // and use the one belonging to the same workspace as the selected
+  // dashboard (falling back to the first one) as a representative preview.
   useEffect(() => {
     if (!embedFailed || !selected) return;
     let cancelled = false;
@@ -222,8 +229,25 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
       try {
         const sdk = await createDataSDK();
         if (!sdk.fetch) throw new Error('Data SDK fetch unavailable');
+
+        const listRes = await sdk.fetch('/services/apexrest/vizvoice/visualizations');
+        if (!listRes.ok) {
+          const text = await listRes.text();
+          throw new Error(`Visualization list failed (${listRes.status}): ${text}`);
+        }
+        const listBody = (await listRes.json()) as {
+          visualizations: Array<VisualizationSpec & { workspace?: { name?: string } }>;
+        };
+        const candidates = listBody.visualizations ?? [];
+        const match =
+          candidates.find((v) => v.workspace?.name === selected!.workspaceIdOrApiName) ??
+          candidates[0];
+        if (!match?.name) {
+          throw new Error('No visualizations available for this workspace.');
+        }
+
         const res = await sdk.fetch(
-          `/services/apexrest/vizvoice/visualization?id=${encodeURIComponent(selected!.name)}`
+          `/services/apexrest/vizvoice/visualization?id=${encodeURIComponent(match.name)}`
         );
         if (!res.ok) {
           const text = await res.text();

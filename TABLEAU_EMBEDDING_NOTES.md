@@ -1,12 +1,15 @@
 # Tableau Embedding Technical Notes
 
 **Date:** July 16, 2026  
-**Status:** Embedding blocked by OAuth scope requirements; shipped with fallback
+**Status:** RESOLVED July 18, 2026 — `/vizvoice/frontdoor` now returns a working frontdoor URL. See
+[Update: July 18, 2026 — Frontdoor Generation Fixed](#update-july-18-2026--frontdoor-generation-fixed)
+at the bottom for the fix and what it unblocks.
 
 **Update — July 17, 2026:** Added a second fallback tier (Tableau Next REST
 API) and confirmed the exact scope gap. See
 [Update: July 17, 2026 — REST API Fallback + Mock Dashboard](#update-july-17-2026--rest-api-fallback--mock-dashboard)
-at the bottom for the current state and what's still open.
+below for that interim work (superseded by the July 18 fix, but kept for
+history).
 
 ---
 
@@ -263,3 +266,147 @@ Workspaces concepts.
    alternative to the JSON-spec rendering if the scope fix lands but the
    rendered data view isn't visually compelling enough for the final
    submission video.
+
+---
+
+## Update: July 18, 2026 — Frontdoor Generation Fixed
+
+### Root cause, finally confirmed
+
+Approach 3/4 above (Named Credential + `web` scope) kept failing with
+`Invalid_Scope` no matter how the External Credential's Scope field or the
+External Client App's Selected OAuth Scopes were configured. The real cause
+was structural, not a config typo:
+
+**Client Credentials Flow cannot carry the `web` scope, full stop.** `web`
+implies a browser/user-session context; Client Credentials Flow is
+machine-to-machine with no session concept, so Salesforce rejects `web` for
+that grant type regardless of what's selected on the app or External
+Credential. This was masked for a while by an unrelated `Invalid_Scope` error
+caused by `refresh_token` being present in the External Credential's Scope
+field (also invalid for Client Credentials Flow, but a red herring for the
+`web`-specific problem — see below).
+
+Debugging path that isolated it: called `/vizvoice/dashboards` (needs only
+`api`) and `/vizvoice/frontdoor` (needs `web`) independently via anonymous
+Apex against the deployed class. `dashboards` succeeded once `refresh_token`
+was removed from the External Credential's Scope field; `frontdoor` kept
+failing with `Invalid_Scope` even after `web`/`full` were confirmed present
+and selected on both the External Credential and the External Client App —
+pointing at the grant type itself, not the scope list.
+
+### The fix
+
+`generateFrontdoorUrl()` in `VizVoiceAgentProxy.cls` no longer calls
+`/services/oauth2/singleaccess` through the Named Credential
+(`callout:VizVoice`, Client Credentials Flow). It now does its own JWT Bearer
+Flow exchange first — the same proven pattern already used by the sibling
+`tableau-next-embed-app` project's `TableauEmbedAuthProxy.cls`:
+
+1. Build and sign a JWT (`Auth.JWT` + `Auth.JWS`) asserting as
+   `epic.0d666f471e01@orgfarm.salesforce.com`, using the `VizVoice_JWT`
+   certificate already configured on the `VizVoice_Agent_API` External Client
+   App.
+2. POST it directly to `{org}/services/oauth2/token` (bypassing
+   `Auth.JWTBearerTokenExchange`, which resolves to a generic HTML login page
+   in this org rather than the token endpoint — same issue documented in the
+   sibling project).
+3. Use the resulting **real user session** access token to call
+   `/services/oauth2/singleaccess` — a user session, unlike Client
+   Credentials, can carry `web` scope, so this succeeds.
+
+`/dashboards`, `/visualizations`, `/session`, `/message` are untouched and
+still go through the Named Credential's Client Credentials Flow — that grant
+type is fine for the `api` scope those endpoints need.
+
+### Verified (anonymous Apex against `vizvoice-dev`)
+
+```
+/vizvoice/dashboards → STATUS 200, returns the TransitData dashboard
+/vizvoice/frontdoor  → STATUS 200, HAS_FRONTDOORURL=true, HAS_ERROR=false
+```
+
+### What this unblocks
+
+`TableauEmbed.tsx`'s tier-1 live embed (Analytics Embedding SDK,
+Approach 3/4 above) can now be retried — the frontdoor URL it needs is
+being generated correctly. Tiers 2–4 (REST API data view, status message,
+"Open in Tableau" link) remain in place as fallbacks and don't need to be
+removed; whether to keep them as safety nets or simplify back to embed-only
+is a product call, not a technical blocker anymore.
+
+The Tableau Next REST API 401 documented in the July 17 update above
+(`INVALID_SESSION_ID`, missing `api` scope on the External Client App behind
+`VizVoice_Org_API`) is a **separate, still-open issue** — unaffected by this
+fix, since `/vizvoice/visualizations` still goes through the Named
+Credential's Client Credentials Flow, not the new JWT path.
+
+---
+
+## Update: July 18, 2026 — Live Embed Fully Working (Second Fix: Data Cloud Query Access)
+
+### The last blocker
+
+With the frontdoor fix above in place, the dashboard shell, header, tabs, and
+filter dropdown rendered correctly — but every individual visualization tile
+failed with "Can't show visualization," and the console showed:
+
+```
+AnalyticsError: postCdpQuerySql failed with message:
+  at executeSemanticSqlWithFallback / executeSqlQuery (analytics_embedding/dashboard3p)
+orgfarm-....my.salesforce.app/services/data/v67.0/ssot/query-sql?...
+  Failed to load resource: the server responded with a status of 403 ()
+```
+
+Initial hypothesis (from Slack research) was that this matched a known,
+unresolved Salesforce-side Semantic Layer bug (W-23265605, malformed date-field
+aliasing in generated SQL, 500 error). **That hypothesis was wrong for this
+case** — the actual error, captured from the Network tab Response body, was:
+
+```json
+[{"message":"This feature is not currently enabled for this user.","errorCode":"FUNCTIONALITY_NOT_ENABLED"}]
+```
+
+`FUNCTIONALITY_NOT_ENABLED` on `ssot/query-sql` is a 403 authz/entitlement
+rejection, not a 500 SQL-generation error — a completely different failure
+mode than W-23265605. This confirmed the problem was on our org's side: the
+identity running the live dashboard query (the JWT run-as user,
+`epic.orgfarm@salesforce.com`) lacked a Data Cloud query permission, distinct
+from the `api`/`web` OAuth scopes already fixed above. Listing dashboards and
+Tableau asset metadata go through a lighter API surface than actually
+*executing* a live semantic-layer query (`ssot/query-sql`) — so it's
+consistent that the shell/metadata calls worked while only live query
+execution 403'd.
+
+### The fix
+
+Two Setup-only changes, no code:
+1. Assigned the **"VizVoice Access"** permission set (already built for this
+   project's Apex/agent access) to the JWT run-as user
+   (`epic.orgfarm@salesforce.com`).
+2. Added **Data Space access for the `default` dataspace** to that same
+   permission set — this is the specific grant that maps to the
+   `dataspace=default` param on the failing `ssot/query-sql` call, and was
+   the missing piece behind `FUNCTIONALITY_NOT_ENABLED`.
+
+### Verified
+
+Live embed now renders the full `TransitData` dashboard end-to-end for
+`epic.orgfarm@salesforce.com`: heatmap (cancelled trips by line/month), delay
+cause bar chart, ridership-vs-satisfaction scatter plot, and on-time
+percentage bar chart — all backed by real Data Cloud semantic-layer queries,
+no fallback tiers needed.
+
+### Takeaway
+
+Two independent blockers had to be cleared for the live embed, and they looked
+similar (both surfaced as failures inside the same iframe) but had unrelated
+root causes and fixes:
+1. **Auth/OAuth scope** (frontdoor generation) — fixed with the JWT Bearer
+   Flow rewrite in `generateFrontdoorUrl()`, above.
+2. **Data Cloud query entitlement** (query execution) — fixed with a
+   permission set assignment in Setup, not code.
+
+Tiers 2–4 of the fallback chain (`TableauEmbed.tsx`) are no longer needed to
+ship a working demo, but can stay in place as safety nets — that's a product
+call, not a technical requirement.

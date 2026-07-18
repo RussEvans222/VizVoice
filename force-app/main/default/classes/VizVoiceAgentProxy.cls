@@ -33,9 +33,23 @@
 @RestResource(urlMapping='/vizvoice/*')
 global without sharing class VizVoiceAgentProxy {
 
-    private static final String API_VERSION = 'v64.0';
+    // v66.0+ required — the Tableau Next visualization detail endpoint throws
+    // DOWNGRADE_VERSION_ERROR on v64.0 for visualizations using newer features.
+    private static final String API_VERSION = 'v66.0';
     // All callouts use the org's My Domain host via Named Credential "VizVoice".
     private static final String NAMED_CRED = 'callout:VizVoice';
+
+    // Client Credentials Flow (used by NAMED_CRED for /dashboards etc.) cannot
+    // carry the "web" scope frontdoor generation needs — Salesforce rejects it
+    // with Invalid_Scope regardless of app config, since Client Credentials has
+    // no browser/session concept. generateFrontdoorUrl() bypasses the Named
+    // Credential and uses JWT Bearer Flow instead (same proven approach as
+    // TableauEmbedAuthProxy.cls), which impersonates a real user session and
+    // can carry "web" scope.
+    private static final String JWT_CONSUMER_KEY = '3MVG9rZjd7MXFdLhw0u0.NMDEnbjlQ8ZqkgBpVOMZ6Jbt6lC4Ni3T0xPw0lSM9qFjqhloEuwPi84ypJNOwF4X';
+    private static final String JWT_RUN_AS_USERNAME = 'epic.0d666f471e01@orgfarm.salesforce.com';
+    private static final String JWT_CERT_DEVELOPER_NAME = 'VizVoice_JWT';
+    private static final String JWT_LOGIN_HOST = 'https://orgfarm-aac260ab62-dev-ed.develop.my.salesforce.com';
     // The invocable-action agent bridge. AGENT_ACTION is the activated agent's
     // action API name under generateAiAgentResponse. The VizVoice agent is
     // published & active (verified: it responds 200 with analytics answers).
@@ -130,10 +144,47 @@ global without sharing class VizVoiceAgentProxy {
      * work for UI Bundles).
      */
     private static void generateFrontdoorUrl(RestResponse res) {
+        // Step 1 — JWT Bearer Flow: exchange a signed JWT for a real user
+        // session access token (can carry "web" scope, unlike Client
+        // Credentials Flow). Auth.JWT has no setValidFor in this org's Apex
+        // version — it defaults to a short validity window on its own.
+        Auth.JWT jwt = new Auth.JWT();
+        jwt.setSub(JWT_RUN_AS_USERNAME);
+        jwt.setAud(JWT_LOGIN_HOST);
+        jwt.setIss(JWT_CONSUMER_KEY);
+
+        Auth.JWS jws = new Auth.JWS(jwt, JWT_CERT_DEVELOPER_NAME);
+        String assertion = jws.getCompactSerialization();
+
+        // Auth.JWTBearerTokenExchange resolves its own login endpoint
+        // internally and lands on a generic login page instead of
+        // /services/oauth2/token in this org — POST directly instead.
+        HttpRequest tokenReq = new HttpRequest();
+        tokenReq.setMethod('POST');
+        tokenReq.setEndpoint(JWT_LOGIN_HOST + '/services/oauth2/token');
+        tokenReq.setHeader('Content-Type', 'application/x-www-form-urlencoded');
+        tokenReq.setBody(
+            'grant_type=' + EncodingUtil.urlEncode('urn:ietf:params:oauth:grant-type:jwt-bearer', 'UTF-8') +
+            '&assertion=' + EncodingUtil.urlEncode(assertion, 'UTF-8'));
+        tokenReq.setTimeout(30000);
+
+        HttpResponse tokenRes = new Http().send(tokenReq);
+        if (tokenRes.getStatusCode() != 200) {
+            res.statusCode = tokenRes.getStatusCode();
+            res.responseBody = tokenRes.getBodyAsBlob();
+            return;
+        }
+
+        Map<String, Object> tokenBody =
+            (Map<String, Object>) JSON.deserializeUntyped(tokenRes.getBody());
+        String sessionAccessToken = (String) tokenBody.get('access_token');
+        String instanceUrl = (String) tokenBody.get('instance_url');
+
+        // Step 2 — mint a frontdoor URL from that session token.
         HttpRequest hr = new HttpRequest();
         hr.setMethod('POST');
-        // Call via Named Credential - uses External Credential's OAuth access token
-        hr.setEndpoint(NAMED_CRED + '/services/oauth2/singleaccess');
+        hr.setEndpoint(instanceUrl + '/services/oauth2/singleaccess');
+        hr.setHeader('Authorization', 'Bearer ' + sessionAccessToken);
         hr.setHeader('Content-Type', 'application/x-www-form-urlencoded');
         hr.setHeader('Accept', 'application/json');
         hr.setBody('');
@@ -152,7 +203,8 @@ global without sharing class VizVoiceAgentProxy {
                 (Map<String, Object>) JSON.deserializeUntyped(hr2.getBody());
             String frontdoorUrl = (String) responseData.get('frontdoor_uri');
             res.responseBody = Blob.valueOf(JSON.serialize(new Map<String, String>{
-                'frontdoorUrl' => frontdoorUrl
+                'frontdoorUrl' => frontdoorUrl,
+                'instanceUrl' => instanceUrl
             }));
         } catch (Exception e) {
             res.statusCode = 500;

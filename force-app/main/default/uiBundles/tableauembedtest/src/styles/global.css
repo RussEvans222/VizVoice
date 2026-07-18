@@ -1,0 +1,12 @@
+html,
+body,
+#root {
+  min-height: 100vh;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #fff;
+  color: #111;
+}

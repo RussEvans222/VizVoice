@@ -43,15 +43,45 @@
 
 ## 🚧 What Still Needs Work (20% Remaining)
 
-### Issue 1: Dashboard Visuals Not Rendering (OPTIONAL)
-**Status:** Dashboard frame shows, but Tableau charts don't embed  
-**Root Cause:** Tableau Embedding SDK requires complex OAuth flow with frontdoor URLs; External Credential scope issues with `web` scope  
-**Impact:** LOW — Voice assistant works independently! Visual is nice-to-have  
-**Decision:** Ship with "Open in new tab" fallback button
-**Why this is actually GOOD for accessibility:**
-- Voice assistant is the primary interface (works perfectly ✅)
-- "Open in new tab" gives sighted users access to native Tableau interface
-- Native Tableau has better ARIA labels than embedded iframe
+### Issue 1: Dashboard Visuals — FULLY FIXED (July 18) — Live Embed Working End-to-End
+**Status:** RESOLVED. The live Tableau Next embed now renders the full
+`TransitData` dashboard — heatmap, delay-cause chart, ridership/satisfaction
+scatter plot, and on-time percentage bar chart — with real data. Two
+independent blockers had to be cleared; both are now fixed:
+
+**Fix 1 — Frontdoor auth (`Invalid_Scope`).** `/vizvoice/frontdoor` was
+failing because Client Credentials Flow structurally can't carry the `web`
+OAuth scope frontdoor generation needs. Fixed by having
+`generateFrontdoorUrl()` do its own JWT Bearer Flow exchange instead of going
+through the Named Credential, same pattern as the sibling
+`TableauEmbedAuthProxy.cls`. See `TABLEAU_EMBEDDING_NOTES.md` → "Update: July
+18, 2026 — Frontdoor Generation Fixed."
+
+**Fix 2 — Data Cloud query access (`FUNCTIONALITY_NOT_ENABLED`, 403).** With
+auth fixed, every viz tile still failed with "Can't show visualization" and a
+`postCdpQuerySql failed` error in console. Slack research initially suggested
+this matched a known, unresolved Salesforce Semantic Layer bug (W-23265605,
+malformed date-field aliasing, 500 error) — but pulling the actual Network tab
+Response body showed a **different** error:
+`{"message":"This feature is not currently enabled for this user.",
+"errorCode":"FUNCTIONALITY_NOT_ENABLED"}`, a 403 on
+`/services/data/v67.0/ssot/query-sql`. That ruled out the Slack bug (which is
+a 500, not a 403) and pointed at a Data Cloud entitlement gap on the JWT
+run-as user (`epic.orgfarm@salesforce.com`) instead. Fixed with two Setup-only
+changes — assigning the **"VizVoice Access"** permission set to that user,
+and adding **Data Space access for the `default` dataspace** to that
+permission set (the specific grant matching `dataspace=default` on the
+failing call) — no code change needed. See `TABLEAU_EMBEDDING_NOTES.md` →
+"Update: July 18, 2026 — Live Embed Fully Working" for the full writeup.
+
+**Decision:** The "Open in new tab" fallback button and the REST-API/status-
+message fallback tiers in `TableauEmbed.tsx` can stay in place as safety
+nets, but are no longer required to ship a working demo — the live embed is
+the primary experience now.
+**Accessibility note (still true):**
+- Voice assistant remains the primary interface (works perfectly ✅)
+- "Open in new tab" still gives sighted users a native-Tableau escape hatch
+- Native Tableau has better ARIA labels than embedded iframe, as a fallback
 - Demonstrates voice-first design philosophy
 
 ### Issue 2: Agent Responses Could Be More Voice-Optimized
