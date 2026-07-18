@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtlClntAppOauthConfigurablePolicies xmlns="http://soap.sforce.com/2006/04/metadata">
+    <clientCredentialsFlowUser>epic.0d666f471e01@orgfarm.salesforce.com</clientCredentialsFlowUser>
+    <commaSeparatedPermissionSet>sfdcInternalInt__sfdc_a360_sfcrm_data_extract,NextGen_1bYgK000000F5NZUA0_Permissions,sfdcInternalInt__sfdc_nc_constraints_engine_deploy,sfdc_aiplanner_service_permset,VizVoice_Access,VizVoice_Named_Cred_Access,sfdcInternalInt__sfdc_scrt2,sfdcInternalInt__sfdc_a360,AccessDevOpsCenterNamedCredentials,sfdc_chatbot_service_permset,Analytics_and_Visualization_Access</commaSeparatedPermissionSet>
+    <commaSeparatedProfile>Partner Community User,Customer Portal Manager Custom,Partner Community Login User,Work.com Only User,Silver Partner User,Force.com - Free User,External Identity User,Customer Community Login User,Customer Portal Manager Standard,Force.com - App Subscription User,Customer Community Plus Login User,External Apps Login User,Chatter External User,Chatter Moderator User,High Volume Customer Portal User,Minimum Access - API Only Integrations,Minimum Access - Salesforce,Standard Platform User,B2B Reordering Portal Buyer Profile,Einstein Agent User,Analytics Cloud Integration User,Analytics Cloud Security User,External Einstein Agent User,Standard User,Chatter Free User,System Administrator,Solution Manager,Custom: Sales Profile,Custom: Marketing Profile,Custom: Support Profile,Marketing User,Contract Manager,Customer Community User,Customer Community Plus User,Identity User,Gold Partner User,Partner App Subscription User</commaSeparatedProfile>
+    <externalClientApplication>VizVoice_Agent_API</externalClientApplication>
+    <ipRelaxationPolicyType>Bypass</ipRelaxationPolicyType>
+    <isClientCredentialsFlowEnabled>true</isClientCredentialsFlowEnabled>
+    <isGuestCodeCredFlowEnabled>false</isGuestCodeCredFlowEnabled>
+    <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
+    <label>VizVoice_Agent_API_oauthPlcy</label>
+    <permittedUsersPolicyType>AdminApprovedPreAuthorized</permittedUsersPolicyType>
+    <refreshTokenPolicyType>SpecificInactivity</refreshTokenPolicyType>
+    <refreshTokenValidityPeriod>30</refreshTokenValidityPeriod>
+    <refreshTokenValidityUnit>Days</refreshTokenValidityUnit>
+    <requiredSessionLevel>STANDARD</requiredSessionLevel>
+</ExtlClntAppOauthConfigurablePolicies>

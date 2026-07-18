@@ -14,25 +14,14 @@ export default function VizVoicePage() {
   }, []);
 
   return (
-    <div className="flex h-full w-full bg-white">
-      <main className="flex-[7] min-w-0 relative bg-slate-100">
+    <div className="flex h-full w-full bg-slate-50">
+      <main className="flex-[7] min-w-0 relative bg-slate-100 border-r border-slate-200 shadow-lg">
         <TableauEmbed onLoad={handleDashboardLoad} className="absolute inset-0" />
       </main>
       <aside
-        className="flex-[3] min-w-0 flex flex-col border-l border-slate-200 bg-white"
+        className="flex-[3] min-w-0 flex flex-col bg-white shadow-2xl"
         aria-label="VizVoice voice assistant"
       >
-        <div className="px-3 py-2 border-b border-slate-200 bg-slate-50">
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-              ENABLE_ACC_FALLBACK
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-emerald-100 text-emerald-700'
-            }`}
-          >
-            Mode: {ENABLE_ACC_FALLBACK ? 'ACC Fallback' : 'Invocable Action'}
-          </span>
-        </div>
         {ENABLE_ACC_FALLBACK ? (
           <div className="h-full w-full">
             <AgentforceConversationClient

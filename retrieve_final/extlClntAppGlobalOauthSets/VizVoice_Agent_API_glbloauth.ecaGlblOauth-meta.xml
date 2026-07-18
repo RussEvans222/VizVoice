@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtlClntAppGlobalOauthSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <callbackUrl>https://orgfarm-aac260ab62-dev-ed--c.develop.my.salesforce.app/app/c__vizvoice</callbackUrl>
+    <certificate>MIIEhjCCA26gAwIBAgIOAZ9m53fvAAAAADJsHQ4wDQYJKoZIhvcNAQELBQAwfDEV
+MBMGA1UEAwwMVml6Vm9pY2VfSldUMRgwFgYDVQQLDA8wMERnSzAwMDAwUjRrNGox
+FzAVBgNVBAoMDlNhbGVzZm9yY2UuY29tMRYwFAYDVQQHDA1TYW4gRnJhbmNpc2Nv
+MQswCQYDVQQIDAJDQTELMAkGA1UEBhMCVVMwHhcNMjYwNzE1MTc1MTEzWhcNMjcw
+NzE1MTIwMDAwWjB8MRUwEwYDVQQDDAxWaXpWb2ljZV9KV1QxGDAWBgNVBAsMDzAw
+RGdLMDAwMDBSNGs0ajEXMBUGA1UECgwOU2FsZXNmb3JjZS5jb20xFjAUBgNVBAcM
+DVNhbiBGcmFuY2lzY28xCzAJBgNVBAgMAkNBMQswCQYDVQQGEwJVUzCCASIwDQYJ
+KoZIhvcNAQEBBQADggEPADCCAQoCggEBALG0zv37jQdcmDtNjeedNI3btaXDf6HU
+MHfYc3e1X3tbWGU+Hsd+uRZDirMjaKWJ86ktYCrsRAF/R1ZfBydXTx/OrI4aQRYK
+uLzRzNvEZHQ04ki+KZVa653JuxF6T2hAof8/h7iG7THga0kRgIeQId8uivFfyHin
+USbfdq8SzaeLUpmhoYvj2LKbBPwuAwhkfGBnGxQeYrj4v/NULoRcOBYFLWUSoG06
+qHKP5gzn+OiGCo45Cct6WuOyHYCsq+SUS1Vt29GOfFgGc8E3B9i4nYhqLaRA7zqk
+nmQvnsGATvcFd0dT2lmhugIT4nfpvnY1dlspBn9qddZ7lMEQg+htbHECAwEAAaOC
+AQQwggEAMB0GA1UdDgQWBBSktq6uekln8crv83G3dBBIXskp7DAXBgNVHREEEDAO
+ggxWaXpWb2ljZV9KV1QwDwYDVR0TAQH/BAUwAwEB/zCBtAYDVR0jBIGsMIGpgBSk
+tq6uekln8crv83G3dBBIXskp7KGBgKR+MHwxFTATBgNVBAMMDFZpelZvaWNlX0pX
+VDEYMBYGA1UECwwPMDBEZ0swMDAwMFI0azRqMRcwFQYDVQQKDA5TYWxlc2ZvcmNl
+LmNvbTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzELMAkGA1UECAwCQ0ExCzAJBgNV
+BAYTAlVTgg4Bn2bnd+8AAAAAMmwdDjANBgkqhkiG9w0BAQsFAAOCAQEAn75hFIQL
+alCFAfTOjTtkkTjlEVRGoz0Pu7L9QGY7PKHJC9foD7za2mkfgGqNioDb70wGBwZP
+OmD3ByHi9SWAP+nes8zBKYL/wiA8XgkIW2cYgtizNon9ONr7BnA+1gKcW/ElJsbo
+QPaEvURQ15K1llE/qzXdzDpOFkLEF9vXrnuaHskLVl76SxsPG0mLmUOJ3+XyJApL
+mE5qd9MjLyHVEyOoQ2xlgJc5a0MgJV9NMRuCs+26pfeN+L3aHdEutQvbT5JBlXqh
+9OzfAhPP5gHp6lHnDF1nkGO0cTkXCQfMJRI6YZ2c4+Wi77mh9xDfPNk3HzJxjCxW
+nANynth8fRu5Tw==</certificate>
+    <consumerKey>3MVG9rZjd7MXFdLhw0u0.NMDEnbjlQ8ZqkgBpVOMZ6Jbt6lC4Ni3T0xPw0lSM9qFjqhloEuwPi84ypJNOwF4X</consumerKey>
+    <externalClientApplication>VizVoice_Agent_API</externalClientApplication>
+    <isClientCredentialsFlowEnabled>true</isClientCredentialsFlowEnabled>
+    <isCodeCredFlowEnabled>true</isCodeCredFlowEnabled>
+    <isCodeCredPostOnly>false</isCodeCredPostOnly>
+    <isConsumerSecretOptional>true</isConsumerSecretOptional>
+    <isDeviceFlowEnabled>false</isDeviceFlowEnabled>
+    <isEnforceRefreshTokenTTL>true</isEnforceRefreshTokenTTL>
+    <isIntrospectAllTokens>false</isIntrospectAllTokens>
+    <isNamedUserJwtEnabled>false</isNamedUserJwtEnabled>
+    <isPkceRequired>true</isPkceRequired>
+    <isRefreshTokenRotationEnabled>true</isRefreshTokenRotationEnabled>
+    <isSecretRequiredForRefreshToken>true</isSecretRequiredForRefreshToken>
+    <isSecretRequiredForTokenExchange>true</isSecretRequiredForTokenExchange>
+    <isTokenExchangeEnabled>false</isTokenExchangeEnabled>
+    <label>VizVoice_Agent_API_glbloauth</label>
+    <shouldRotateConsumerKey>false</shouldRotateConsumerKey>
+    <shouldRotateConsumerSecret>false</shouldRotateConsumerSecret>
+</ExtlClntAppGlobalOauthSettings>
