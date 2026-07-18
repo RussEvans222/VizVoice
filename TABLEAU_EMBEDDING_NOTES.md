@@ -184,14 +184,14 @@ For an accessibility-first app, "Open in new tab" is genuinely better UX.
    source, and fields as a simple text/list view. This is a genuinely
    different code path from the Embedding SDK — it doesn't render an iframe
    or a chart, just the structured JSON Tableau Next returns for the asset.
-3. **Fallback of the fallback — mock dashboard.** If the REST call also
-   fails (currently: yes, see Root Cause below), the component shows
-   `TransitDashboardMock` (added by a teammate, `Mahathi`, as
-   `Add accessible mock dashboard with full semantic model coverage`) — a
-   hand-built, fully accessible mock of the transit dataset. This is what's
-   currently showing in the demo recording and is an acceptable stand-in:
-   it's real dataset-shaped content, keyboard/screen-reader accessible, and
-   good enough for the test-pass video.
+3. **Fallback of the fallback — plain status message.** If the REST call
+   also fails (currently: yes, see Root Cause below), the component shows a
+   simple `role="status"` message instead of chart content — no mock data.
+   (Removed `Mahathi`'s `TransitDashboardMock` component on 2026-07-17: it
+   was a useful stand-in for the test-pass recording, but the team decided
+   not to ship placeholder/mock visualization content in the actual app —
+   an honest "unavailable" status is preferred over data that looks real but
+   isn't.)
 4. **"Open in Tableau" link** (unchanged) — still shown alongside whichever
    of 2/3 is rendering, as the always-available accessible escape hatch.
 

@@ -7,7 +7,6 @@ import {
 } from '@salesforce/analytics-embedding-sdk';
 import { createDataSDK } from '@salesforce/platform-sdk';
 import { log } from '@/lib/logger';
-import { TransitDashboardMock } from '@/components/TransitDashboardMock';
 
 interface Dashboard {
   name: string;   // API name, e.g. "New_Dashboard"
@@ -334,10 +333,17 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
                 )}
               </div>
             ) : (
-              <TransitDashboardMock label={selected?.label ?? 'TransitData'} />
-            )}
-            {vizSpecError && (
-              <p className="text-xs text-red-500 px-4 pb-1" role="alert">{vizSpecError}</p>
+              <div
+                className="flex-1 flex items-center justify-center p-4"
+                role="status"
+                aria-live="polite"
+              >
+                <span className="text-sm text-slate-500">
+                  {vizSpecError
+                    ? `Dashboard preview unavailable. ${vizSpecError}`
+                    : `Loading ${selected?.label ?? 'dashboard'} data…`}
+                </span>
+              </div>
             )}
             {viewerUrl && (
               <div className="shrink-0 flex items-center justify-end gap-2 px-4 py-1.5 border-t border-slate-200 bg-slate-50">
