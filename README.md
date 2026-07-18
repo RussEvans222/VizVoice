@@ -221,6 +221,9 @@ export const TARGET_ENTITY_ID = 'C360_Semantic_Model_Extended_0ba';
 - ✅ ARIA accessibility features
 - ✅ Keyboard-only navigation (Alt+V)
 - ✅ Screen reader instructions on page
+- ✅ **VizVoice brand colors** — Blue (#4E79A7) to Teal (#76B7B2) gradient
+- ✅ **No red colors** — Error states use orange (#F28E2B)
+- ✅ **Branding support** — Ready for Agentforce robot + Tableau Next logos
 
 ### ⚠️ Known Issues:
 
@@ -240,11 +243,33 @@ export const TARGET_ENTITY_ID = 'C360_Semantic_Model_Extended_0ba';
 
 ## 📝 Documentation
 
+### Core Setup
 - **[TEAM_STATUS.md](TEAM_STATUS.md)** — Current progress, what's working, next steps
 - **[NEXT_STEPS.md](NEXT_STEPS.md)** — Detailed action plan and testing protocol
-- **[AGENT_PROMPT_UPDATES.md](AGENT_PROMPT_UPDATES.md)** — Accessibility rules for agent system prompt
-- **[TABLEAU_EMBEDDING_NOTES.md](TABLEAU_EMBEDDING_NOTES.md)** — Technical deep-dive on embedding attempts
 - **[CALL_PREP.md](CALL_PREP.md)** — Team briefing for non-technical members
+- **[DEPLOYMENT_INSTRUCTIONS.md](DEPLOYMENT_INSTRUCTIONS.md)** — How to build and deploy UI Bundle
+
+### Agent & Data
+- **[AGENT_PROMPT_UPDATES.md](AGENT_PROMPT_UPDATES.md)** — Accessibility rules for agent system prompt
+- **[AGENT_CONFIG_GUIDE.md](AGENT_CONFIG_GUIDE.md)** — Agent configuration details
+- **[AGENT_TEST_PROMPTS.md](AGENT_TEST_PROMPTS.md)** — Test questions for agent validation
+- **[DATASET_CURRENT_CAPABILITIES.md](DATASET_CURRENT_CAPABILITIES.md)** — What questions work with current data
+- **[DATASET_ACCESSIBILITY_PROPOSAL.md](DATASET_ACCESSIBILITY_PROPOSAL.md)** — Enhanced dataset design for accessibility
+
+### UI & Branding
+- **[VIZVOICE_COLOR_PALETTE.md](VIZVOICE_COLOR_PALETTE.md)** — Complete brand color reference (blue/teal/orange)
+- **[COLOR_UPDATES_APPLIED.md](COLOR_UPDATES_APPLIED.md)** — Detailed changelog of color updates
+- **[ADD_BRANDING_IMAGES.md](ADD_BRANDING_IMAGES.md)** — Guide for adding Agentforce/Tableau logos
+- **[DESIGN_UNIFICATION_GUIDE.md](DESIGN_UNIFICATION_GUIDE.md)** — Dashboard and app color coordination
+
+### Accessibility
+- **[ACCESSIBILITY.md](ACCESSIBILITY.md)** — WCAG 2.2 compliance review and findings
+- **[README_ACCESSIBILITY_UPDATES.md](README_ACCESSIBILITY_UPDATES.md)** — Accessibility feature documentation
+
+### Technical Deep-Dives
+- **[TABLEAU_EMBEDDING_NOTES.md](TABLEAU_EMBEDDING_NOTES.md)** — Technical deep-dive on embedding attempts
+- **[TABLEAU_LAYOUT_FIX.md](TABLEAU_LAYOUT_FIX.md)** — Making dashboard charts full-width
+- **[PURPLE_COLOR_DEBUG.md](PURPLE_COLOR_DEBUG.md)** — Troubleshooting cache issues after color updates
 
 ---
 
