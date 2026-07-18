@@ -8,7 +8,7 @@
 
 ## 🎯 What We're Building
 
-**VizVoice** is a voice-first accessibility agent that makes Tableau dashboards fully accessible to blind and low-vision users. Instead of inaccessible chart visuals, users ask questions by voice and get spoken answers powered by Agentforce + Data Cloud analytics.
+**VizVoice** is a voice-first accessibility agent that makes Tableau dashboards accessible through voice, for blind and low-vision users. Instead of inaccessible chart visuals, users ask questions by voice and get spoken answers powered by Agentforce + Data Cloud analytics. Built on Salesforce's pre-installed Analytics and Visualization V2 Agentforce template, with a voice interaction layer, ARIA live-region mirroring, and accessibility-specific response rules added on top. Demo runs on a synthetic sample transit dataset. Accessibility work so far is a WCAG 2.2 code review (see `ACCESSIBILITY_REVIEW.md`); testing with actual blind/low-vision users is planned but not yet done.
 
 ---
 
@@ -242,18 +242,21 @@ ACCESSIBILITY RULES:
 
 **VizVoice: Voice-First Analytics for Accessibility**
 
-VizVoice is an Agentforce-powered voice assistant that makes Tableau Next dashboards fully accessible to blind and low-vision users. Traditional data visualizations render as unlabeled SVG graphics, effectively invisible to screen readers. VizVoice solves this by enabling users to ask questions about dashboard data using natural voice commands and receive spoken answers powered by Salesforce Data Cloud's semantic layer.
+VizVoice is an Agentforce-powered voice assistant that makes Tableau Next dashboard data accessible to blind and low-vision users through conversation. Traditional data visualizations render as unlabeled SVG graphics, effectively invisible to screen readers. VizVoice solves this by enabling users to ask questions about dashboard data using natural voice commands and receive spoken answers powered by Salesforce Data Cloud's semantic layer.
 
 **Technical Implementation:**  
-VizVoice combines Agentforce's Analytics Agent template with a React UI Bundle frontend and browser-native Web Speech APIs. Users activate the assistant with a keyboard shortcut (Alt+V), speak their question, and receive an immediate voice response. Behind the scenes, the agent queries Data Cloud semantic models using the AnalyzeSemanticData action, ensuring responses are grounded in real-time dashboard data.
+VizVoice is built on top of Salesforce's pre-installed Analytics and Visualization V2 Agentforce template — the underlying `AnalyzeSemanticData` and `CreateUpdateVisualization` subagents are provided by that template, not built from scratch. What VizVoice adds is the voice-first interaction layer: a React UI Bundle frontend with browser-native Web Speech APIs, a keyboard shortcut (Alt+V) to activate listening, and an Apex REST proxy for secure agent invocation. The agent queries Data Cloud semantic models using the AnalyzeSemanticData action, grounded for this demo in a synthetic sample transit dataset (not real transit-agency data).
 
 **Accessibility-First Design:**  
-All agent responses are crafted without visual metaphors—no references to colors, chart positions, or phrases like "as you can see." Instead, responses use ordinal language ("the largest value", "the second-highest metric") and lead with the most important number first. The interface is fully keyboard-navigable, includes ARIA live regions for screen reader compatibility, and requires zero visual interpretation.
+All agent responses are crafted without visual metaphors—no references to colors, chart positions, or phrases like "as you can see." Instead, responses use ordinal language ("the largest value", "the second-highest metric") and lead with the most important number first. The interface is fully keyboard-navigable and includes ARIA live regions for screen reader compatibility. This has been validated through a WCAG 2.2 code review (see `ACCESSIBILITY_REVIEW.md`); testing with actual blind and low-vision users is the planned next step and has not yet been completed.
 
 **Impact:**  
-VizVoice demonstrates that data visualization accessibility isn't just about alt text—it's about fundamentally reimagining how users interact with data. By leveraging Agentforce's reasoning capabilities and Data Cloud's semantic intelligence, VizVoice makes analytics truly inclusive.
+VizVoice demonstrates that data visualization accessibility isn't just about alt text—it's about fundamentally reimagining how users interact with data. By leveraging Agentforce's reasoning capabilities and Data Cloud's semantic intelligence, VizVoice makes analytics more inclusive, with real user testing as the next validation step beyond this hackathon build.
 
-**Technologies:** Agentforce, Data Cloud, Tableau Next, React UI Bundles, Web Speech API, Apex REST
+**Known Limitation:**  
+Relative time phrases like "this year" can fail to resolve against the sample dataset's actual date coverage. The agent handles this correctly by stating it found no matching data rather than guessing an answer (see `AGENT_TEST_RESULTS.md`); the fix, if extended beyond the hackathon, would be refreshing the sample dataset with current-year rows.
+
+**Technologies:** Agentforce (Analytics and Visualization V2 template), Data Cloud, Tableau Next, React UI Bundles, Web Speech API, Apex REST
 
 ---
 

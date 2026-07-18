@@ -13,11 +13,22 @@
  * Verified working end-to-end: POST returns { agentResponse, sessionId } with 200.
  *
  * Endpoints:
- *   GET    /services/apexrest/vizvoice/dashboards      → list Tableau dashboards
- *   GET    /services/apexrest/vizvoice/frontdoor       → generate frontdoor URL for embedding
- *   POST   /services/apexrest/vizvoice/session         → open a conversation (first turn)
- *   POST   /services/apexrest/vizvoice/message         → send a message (subsequent turns)
- *   DELETE /services/apexrest/vizvoice/session/{id}    → (no-op; session is stateless here)
+ *   GET    /services/apexrest/vizvoice/dashboards           → list Tableau dashboards
+ *   GET    /services/apexrest/vizvoice/frontdoor            → generate frontdoor URL for embedding
+ *   GET    /services/apexrest/vizvoice/visualizations       → list Tableau Next visualizations (REST API fallback)
+ *   GET    /services/apexrest/vizvoice/visualization?id=... → get one visualization's spec/data by id or API name
+ *   POST   /services/apexrest/vizvoice/session              → open a conversation (first turn)
+ *   POST   /services/apexrest/vizvoice/message              → send a message (subsequent turns)
+ *   DELETE /services/apexrest/vizvoice/session/{id}         → (no-op; session is stateless here)
+ *
+ * Tableau Next REST API fallback (2026-07): the Embedding SDK's live inline
+ * render is blocked by an OAuth "web" scope gap on this org's connected app.
+ * The Tableau Next REST API (/tableau/visualizations) needs only the lighter
+ * "api" scope, which the same Named Credential "VizVoice" can carry once that
+ * scope is added to the connected app in Setup — no new auth plumbing needed.
+ * These endpoints proxy that API so the frontend can render the visualization's
+ * data/spec directly when the SDK embed fails, instead of only an "open in
+ * new tab" link.
  */
 @RestResource(urlMapping='/vizvoice/*')
 global without sharing class VizVoiceAgentProxy {
@@ -50,6 +61,10 @@ global without sharing class VizVoiceAgentProxy {
                 listDashboards(res);
             } else if (path == 'frontdoor') {
                 generateFrontdoorUrl(res);
+            } else if (path == 'visualizations') {
+                listVisualizations(res);
+            } else if (path == 'visualization') {
+                getVisualization(req, res);
             } else {
                 res.statusCode = 404;
                 res.responseBody = Blob.valueOf('{"error":"Unknown GET path: ' + path + '"}');
@@ -143,6 +158,50 @@ global without sharing class VizVoiceAgentProxy {
             res.statusCode = 500;
             res.responseBody = Blob.valueOf('{"error":"Failed to parse frontdoor response: ' + e.getMessage() + '"}');
         }
+    }
+
+    /**
+     * List Tableau Next visualizations available to the running user.
+     * GET /tableau/visualizations -> { "visualizations": [ {...}, ... ] }
+     * Relayed as-is so the frontend can pick one and call getVisualization.
+     */
+    private static void listVisualizations(RestResponse res) {
+        HttpRequest hr = new HttpRequest();
+        hr.setMethod('GET');
+        hr.setEndpoint(NAMED_CRED + '/services/data/' + API_VERSION + '/tableau/visualizations');
+        hr.setHeader('Content-Type', 'application/json');
+        hr.setTimeout(30000);
+
+        HttpResponse hr2 = new Http().send(hr);
+        res.statusCode = hr2.getStatusCode();
+        res.responseBody = hr2.getBodyAsBlob();
+    }
+
+    /**
+     * Get a single visualization's spec/data by id or API name.
+     * GET /tableau/visualizations/{visualizationIdOrApiName}
+     * Relayed as-is — includes dataSource, fields, and visualSpecification,
+     * which the frontend can render directly as a fallback for the blocked
+     * live embed.
+     */
+    private static void getVisualization(RestRequest req, RestResponse res) {
+        String vizId = req.params.get('id');
+        if (String.isBlank(vizId)) {
+            res.statusCode = 400;
+            res.responseBody = Blob.valueOf('{"error":"Missing required query param: id"}');
+            return;
+        }
+
+        HttpRequest hr = new HttpRequest();
+        hr.setMethod('GET');
+        hr.setEndpoint(NAMED_CRED + '/services/data/' + API_VERSION
+            + '/tableau/visualizations/' + EncodingUtil.urlEncode(vizId, 'UTF-8'));
+        hr.setHeader('Content-Type', 'application/json');
+        hr.setTimeout(30000);
+
+        HttpResponse hr2 = new Http().send(hr);
+        res.statusCode = hr2.getStatusCode();
+        res.responseBody = hr2.getBodyAsBlob();
     }
 
     /**

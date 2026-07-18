@@ -16,6 +16,15 @@ interface Dashboard {
   workspaceIdOrApiName?: string;
 }
 
+// Shape of GET /tableau/visualizations/{id} — only the fields we render.
+interface VisualizationSpec {
+  id?: string;
+  label?: string;
+  name?: string;
+  dataSource?: { label?: string; name?: string };
+  fields?: Record<string, { label?: string; role?: string; function?: string }>;
+}
+
 interface TableauEmbedProps {
   onLoad?: (analyticsTabId: string, dashboardLabel: string) => void;
   className?: string;
@@ -103,6 +112,9 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
   // embedFailed → the SDK couldn't render inline; show the new-tab fallback.
   const [embedFailed, setEmbedFailed] = useState(false);
   const [embedReady, setEmbedReady] = useState(false);
+  // Tableau Next REST API fallback data — fetched only once the embed fails.
+  const [vizSpec, setVizSpec] = useState<VisualizationSpec | null>(null);
+  const [vizSpecError, setVizSpecError] = useState<string | null>(null);
   const selectId = useId();
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -155,6 +167,8 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
     const host = hostRef.current;
     setEmbedFailed(false);
     setEmbedReady(false);
+    setVizSpec(null);
+    setVizSpecError(null);
     // Clear any prior render (dashboard switch).
     host.replaceChildren();
 
@@ -197,6 +211,38 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
       host.replaceChildren();
     };
   }, [selected, orgUrl]);
+
+  // When the live embed can't render, try the Tableau Next REST API as a
+  // backup: fetch the visualization's structured spec via the same Named
+  // Credential and render its fields directly instead of only a link out.
+  useEffect(() => {
+    if (!embedFailed || !selected) return;
+    let cancelled = false;
+
+    async function fetchVizSpec() {
+      try {
+        const sdk = await createDataSDK();
+        if (!sdk.fetch) throw new Error('Data SDK fetch unavailable');
+        const res = await sdk.fetch(
+          `/services/apexrest/vizvoice/visualization?id=${encodeURIComponent(selected!.name)}`
+        );
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Visualization fetch failed (${res.status}): ${text}`);
+        }
+        const spec = (await res.json()) as VisualizationSpec;
+        if (!cancelled) setVizSpec(spec);
+      } catch (e: any) {
+        log.error('[TableauEmbed] fetchVizSpec error:', e);
+        if (!cancelled) setVizSpecError(e.message || 'Could not load visualization data.');
+      }
+    }
+    fetchVizSpec();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [embedFailed, selected]);
 
   function handleSelect(e: React.ChangeEvent<HTMLSelectElement>) {
     const dash = dashboards.find((d) => d.name === e.target.value);
@@ -264,7 +310,35 @@ export function TableauEmbed({ onLoad, className = '' }: TableauEmbedProps) {
 
         {embedFailed && (
           <div className="absolute inset-0 flex flex-col overflow-hidden">
-            <TransitDashboardMock label={selected?.label ?? 'TransitData'} />
+            {vizSpec ? (
+              <div className="flex-1 overflow-auto p-4" role="region" aria-label="Visualization details">
+                <p className="text-xs text-slate-400 mb-2">
+                  Live embed unavailable — showing data via the Tableau Next REST API.
+                </p>
+                <h3 className="text-sm font-semibold text-slate-700">
+                  {vizSpec.label ?? selected?.label}
+                </h3>
+                {vizSpec.dataSource?.label && (
+                  <p className="text-xs text-slate-500 mb-2">Source: {vizSpec.dataSource.label}</p>
+                )}
+                {vizSpec.fields && (
+                  <ul className="text-sm text-slate-700 space-y-1">
+                    {Object.values(vizSpec.fields).map((f, i) => (
+                      <li key={i}>
+                        {f.label ?? 'Field'}
+                        {f.role ? ` — ${f.role}` : ''}
+                        {f.function ? ` (${f.function})` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <TransitDashboardMock label={selected?.label ?? 'TransitData'} />
+            )}
+            {vizSpecError && (
+              <p className="text-xs text-red-500 px-4 pb-1" role="alert">{vizSpecError}</p>
+            )}
             {viewerUrl && (
               <div className="shrink-0 flex items-center justify-end gap-2 px-4 py-1.5 border-t border-slate-200 bg-slate-50">
                 <span className="text-xs text-slate-400">Live dashboard:</span>

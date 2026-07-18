@@ -43,3 +43,8 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Demo recorder scratch output (screenshots, logs, test-pass videos)
+demo-out/
+*.mp4
+*.srt

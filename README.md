@@ -2,7 +2,7 @@
 
 **Voice-First Accessibility Agent for Tableau Next Dashboards**
 
-VizVoice makes Tableau analytics fully accessible to blind and low-vision users through natural voice conversation powered by Salesforce Agentforce and Data Cloud.
+VizVoice is a voice-first Agentforce agent built on top of Salesforce's Analytics and Visualization V2 template, extended with a real-time voice interaction layer to make Tableau analytics accessible through natural voice conversation. Grounded in a synthetic sample transit dataset for this demo. Code-level accessibility (WCAG 2.2 review, ARIA live regions, keyboard-only control, no-visual-metaphor response language) has been validated; testing with blind and low-vision users is the planned next step, not yet completed.
 
 Built for the **Salesforce "Agentforce for Good" Hackathon** — Accessibility Track
 

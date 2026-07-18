@@ -3,6 +3,11 @@
 **Date:** July 16, 2026  
 **Status:** Embedding blocked by OAuth scope requirements; shipped with fallback
 
+**Update — July 17, 2026:** Added a second fallback tier (Tableau Next REST
+API) and confirmed the exact scope gap. See
+[Update: July 17, 2026 — REST API Fallback + Mock Dashboard](#update-july-17-2026--rest-api-fallback--mock-dashboard)
+at the bottom for the current state and what's still open.
+
 ---
 
 ## What We Tried
@@ -165,3 +170,96 @@ For an accessibility-first app, "Open in new tab" is genuinely better UX.
 - Time better spent on: agent prompt tuning, screen reader testing, demo video
 
 **Status:** APPROVED - Fallback is intentional design choice for accessibility
+
+---
+
+## Update: July 17, 2026 — REST API Fallback + Mock Dashboard
+
+### Current fallback chain (in `TableauEmbed.tsx`)
+
+1. **Live embed** via the Analytics Embedding SDK (Approach 3/4 above) — still blocked.
+2. **NEW — Tableau Next REST API data view.** When the embed fails, the
+   component now calls a new Apex endpoint that proxies
+   `GET /tableau/visualizations/{id}` and renders the returned label, data
+   source, and fields as a simple text/list view. This is a genuinely
+   different code path from the Embedding SDK — it doesn't render an iframe
+   or a chart, just the structured JSON Tableau Next returns for the asset.
+3. **Fallback of the fallback — mock dashboard.** If the REST call also
+   fails (currently: yes, see Root Cause below), the component shows
+   `TransitDashboardMock` (added by a teammate, `Mahathi`, as
+   `Add accessible mock dashboard with full semantic model coverage`) — a
+   hand-built, fully accessible mock of the transit dataset. This is what's
+   currently showing in the demo recording and is an acceptable stand-in:
+   it's real dataset-shaped content, keyboard/screen-reader accessible, and
+   good enough for the test-pass video.
+4. **"Open in Tableau" link** (unchanged) — still shown alongside whichever
+   of 2/3 is rendering, as the always-available accessible escape hatch.
+
+### New code
+
+- `force-app/main/default/classes/VizVoiceAgentProxy.cls` — added
+  `GET /vizvoice/visualizations` (list) and `GET /vizvoice/visualization?id=...`
+  (single spec), proxying `/services/data/v64.0/tableau/visualizations[/...]`
+  through the **same** Named Credential (`callout:VizVoice`) already used for
+  dashboards and the agent call. No new Named/External Credential was added.
+- `src/components/TableauEmbed.tsx` — on `embedFailed`, fetches
+  `/services/apexrest/vizvoice/visualization?id={selected.name}` and renders
+  `vizSpec.label` / `vizSpec.dataSource.label` / `vizSpec.fields` if the call
+  succeeds; otherwise renders the mock as before.
+
+### Root cause of the REST API 401 (confirmed live, `check2.png`)
+
+```json
+{"message":"This session is not valid for use with the specified REST API endpoint. One of the following scopes is required: Manage user data via APIs, Full access","errorCode":"INVALID_SESSION_ID"}
+```
+
+The Tableau Next REST API (`/tableau/visualizations`, `/tableau/download`,
+`/tableau/workspaces`) requires OAuth scope **`api`** ("Manage user data via
+APIs") on the External Client App / Connected App behind the External
+Credential, per
+[`docs/tableau-next-rest-api/auth_for_sfapi.md`](docs/tableau-next-rest-api/auth_for_sfapi.md).
+This is a **lighter** scope requirement than the Embedding SDK's `web` scope
+(which needed additional CSP/frontdoor complexity per Approach 4 above) —
+so this is a more tractable path to at least a data-level fallback, even if
+full live embedding remains blocked.
+
+**Not yet resolved:** we inspected the org's Connected App list and found
+`Customer 360 Data Platform` — a system-managed Data Cloud app with no OAuth
+Scopes / Consumer Key section, confirming it is **not** the app backing
+`VizVoice_Org_API`. Next step is to find that app in **External Client Apps
+Manager** (not classic Connected Apps) and add the `api` scope there — this
+requires org Setup access, not code, so it's tracked as an open task rather
+than done in this pass.
+
+### Research: Tableau Next REST API surface
+
+Fetched and saved to `docs/tableau-next-rest-api/` for reference:
+`get-started.md`, `resources_overview.md`, `auth_for_connectapi.md`,
+`auth_for_sfapi.md`. The API's `Visualizations` resource
+(`GET /tableau/visualizations`, `GET /tableau/visualizations/{id}`) and
+`Downloads` resource (`POST /tableau/download`, which can return a
+pre-rendered image of an asset) are two viable alternate paths — the code
+above implements the former; the latter (image download) is a documented but
+not-yet-implemented option if a static image proves more useful than a
+rendered-from-JSON data view.
+
+Note: the classic `tableau/tableau-postman` Postman collection (Tableau
+Server/Cloud REST API) was checked and confirmed **not applicable** — it's a
+different, older product surface with no Tableau Next / Visualizations /
+Workspaces concepts.
+
+### What's still open
+
+1. Locate the External Client App backing `VizVoice_Org_API` in **External
+   Client Apps Manager** and add the `api` OAuth scope + enable Client
+   Credentials Flow + set a Run As user (per `auth_for_sfapi.md`). Once done,
+   step 2 of the fallback chain above should light up with real Tableau data
+   instead of falling through to the mock.
+2. Re-attempt a **simple/direct Embedding SDK** approach (rather than the
+   frontdoor-URL path already exhausted above) now that the REST API path is
+   proven — worth revisiting whether a newer SDK version or a different auth
+   handoff avoids the `web`-scope/CSP complexity entirely.
+3. Consider the `POST /tableau/download` (image) path as a lower-effort
+   alternative to the JSON-spec rendering if the scope fix lands but the
+   rendered data view isn't visually compelling enough for the final
+   submission video.
