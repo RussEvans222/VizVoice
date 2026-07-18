@@ -15,6 +15,7 @@ export interface SendMessageOptions {
 export interface AgentResponse {
   answer: string;
   visualizationMetadata?: string;
+  answerArtifacts?: string;
 }
 
 export interface UseAgentSessionReturn {
@@ -162,9 +163,26 @@ export function useAgentSession(): UseAgentSessionReturn {
 
       const message = (rawBody as Record<string, unknown>).message;
       let answer = '';
+      let visualizationMetadata: string | undefined;
+      let answerArtifacts: string | undefined;
+
       if (message && typeof message === 'object') {
         const content = (message as Record<string, unknown>).content;
         if (content) answer = String(content);
+
+        // Extract visualization metadata (if present)
+        const vizMetadata = (message as Record<string, unknown>).visualizationMetadata;
+        if (vizMetadata && typeof vizMetadata === 'string') {
+          visualizationMetadata = vizMetadata;
+          log.info('sendMessage: visualizationMetadata found, length =', vizMetadata.length);
+        }
+
+        // Extract answer artifacts (if present)
+        const artifacts = (message as Record<string, unknown>).answerArtifacts;
+        if (artifacts && typeof artifacts === 'string') {
+          answerArtifacts = artifacts;
+          log.info('sendMessage: answerArtifacts found, length =', artifacts.length);
+        }
       }
 
       if (!answer.trim()) {
@@ -174,7 +192,7 @@ export function useAgentSession(): UseAgentSessionReturn {
       }
 
       log.info('sendMessage: answer =', answer.slice(0, 120));
-      return { answer };
+      return { answer, visualizationMetadata, answerArtifacts };
     },
     [],
   );

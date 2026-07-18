@@ -30,6 +30,33 @@ export default function VizVoicePage() {
               inline
               width="100%"
               height="100%"
+              styleTokens={{
+                // Header - VizVoice Blue (solid color - gradients not supported)
+                headerBlockBackground: '#4E79A7',
+                headerBlockTextColor: '#ffffff',
+                headerBlockIconColor: '#ffffff',
+                headerBlockBorderBottomColor: '#76B7B2',
+                headerBlockBorderBottomWidth: '3px',
+                headerBlockBorderBottomStyle: 'solid',
+
+                // Messages - Blue for user, White for agent
+                messageBlockOutboundBackgroundColor: '#4E79A7',
+                messageBlockOutboundTextColor: '#ffffff',
+                messageBlockInboundBackgroundColor: '#f3f4f6',
+                messageBlockInboundTextColor: '#1f2937',
+                messageBlockBorderRadius: '12px',
+
+                // Container
+                containerBackground: '#ffffff',
+                headerBackground: '#4E79A7',
+
+                // Welcome block
+                welcomeBlockTextColor: '#4E79A7',
+
+                // FAB (floating action button) - if visible
+                fabBackground: '#4E79A7',
+                fabForegroundColor: '#ffffff',
+              }}
             />
           </div>
         ) : (

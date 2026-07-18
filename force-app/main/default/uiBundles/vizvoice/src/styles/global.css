@@ -1,9 +1,18 @@
 /* Google Fonts removed — violates UI Bundle style-src CSP. Using system sans-serif. */
 
 @layer components {
-	/* Primary purple color for stat values and headers */
+	/* Primary color for stat values and headers - VizVoice Blue */
 	.text-primary-purple {
-		color: #65185c;
+		color: #4E79A7;
+	}
+
+	/* Override any purple backgrounds to VizVoice brand colors */
+	[class*="purple"],
+	[style*="purple"],
+	[style*="#6"],
+	[style*="#7"] {
+		background: #4E79A7 !important;
+		color: white !important;
 	}
 }
 

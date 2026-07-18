@@ -10,6 +10,7 @@ import { useAgentSession } from '@/hooks/useAgentSession';
 import { useSpeechInput } from '@/hooks/useSpeechInput';
 import { useSpeechOutput } from '@/hooks/useSpeechOutput';
 import { useMicrophonePermission } from '@/hooks/useMicrophonePermission';
+import { ChartRenderer } from '@/components/ChartRenderer';
 import { log } from '@/lib/logger';
 
 interface Message {
@@ -17,6 +18,7 @@ interface Message {
   role: 'user' | 'agent';
   text: string;
   timestamp: Date;
+  visualizationMetadata?: string;
 }
 
 interface VoiceAssistantProps {
@@ -52,6 +54,7 @@ export function VoiceAssistant({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSpokenWelcome = useRef(false);
   const continuousModeTimeoutRef = useRef<number | null>(null);
+  const [lastAnnouncedMessage, setLastAnnouncedMessage] = useState<string>('');
 
   const { sendMessage: sendToAgent, ready: agentReady, error: agentError } = useAgentSession();
   const { state: speechState, start: startListening, stop: stopListening, supported: sttSupported } = useSpeechInput();
@@ -82,8 +85,18 @@ export function VoiceAssistant({
   }, [agentError]);
 
   const handleVoiceInteraction = useCallback(async (fromContinuousMode = false) => {
+    console.log('[VoiceAssistant] handleVoiceInteraction called', {
+      fromContinuousMode,
+      speechState,
+      isProcessing,
+      micPermission,
+      sttSupported,
+      agentReady
+    });
+
     // If user manually stops, exit continuous mode
     if (speechState === 'listening') {
+      console.log('[VoiceAssistant] Stopping listening (user interrupt)');
       stopListening();
       setIsContinuousActive(false);
       if (continuousModeTimeoutRef.current) {
@@ -93,7 +106,10 @@ export function VoiceAssistant({
       return;
     }
 
-    if (isProcessing) return;
+    if (isProcessing) {
+      console.log('[VoiceAssistant] Already processing, ignoring click');
+      return;
+    }
 
     setError(null);
     cancelSpeech();
@@ -101,10 +117,13 @@ export function VoiceAssistant({
     try {
       // Request microphone permission if not granted
       if (micPermission !== 'granted') {
+        console.log('[VoiceAssistant] Microphone permission not granted, requesting...', micPermission);
         log.info('Requesting microphone permission...');
         try {
           await requestMicPermission();
+          console.log('[VoiceAssistant] Permission granted!');
         } catch (permErr) {
+          console.error('[VoiceAssistant] Permission denied:', permErr);
           log.error('Microphone permission denied:', permErr);
           throw new Error(
             'Microphone access denied. Please allow microphone permission in your browser settings and try again.'
@@ -112,8 +131,10 @@ export function VoiceAssistant({
         }
       }
 
+      console.log('[VoiceAssistant] Starting speech recognition...');
       log.info('Starting speech recognition...');
       const transcript = await startListening();
+      console.log('[VoiceAssistant] Got transcript:', transcript);
 
       if (!transcript.trim()) {
         log.info('No speech detected');
@@ -151,8 +172,12 @@ export function VoiceAssistant({
         role: 'agent',
         text: response.answer || 'I could not understand that. Please try again.',
         timestamp: new Date(),
+        visualizationMetadata: response.visualizationMetadata,
       };
       setMessages((prev) => [...prev, agentMessage]);
+
+      // Announce to screen readers (separate from TTS)
+      setLastAnnouncedMessage(`Agent: ${agentMessage.text}`);
 
       // Speak the response
       if (response.answer && ttsSupported) {
@@ -187,6 +212,9 @@ export function VoiceAssistant({
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorChatMessage]);
+
+      // Announce error to screen readers
+      setLastAnnouncedMessage(`Error: ${errorMessage}`);
 
       // Stop continuous mode on error
       setIsContinuousActive(false);
@@ -243,15 +271,25 @@ export function VoiceAssistant({
   const isDisabled = !sttSupported || !agentReady || isProcessing;
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="relative px-6 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 shadow-lg">
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Header - VizVoice brand gradient (Blue to Teal) */}
+      <header className="relative px-6 py-4 bg-gradient-to-r from-[#4E79A7] to-[#76B7B2] shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/20">
+              <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/20 overflow-hidden">
+                <img
+                  src="/images/agentforce-robot.png"
+                  alt="VizVoice Assistant"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to microphone icon if image doesn't load
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
                 <svg
-                  className="w-6 h-6 text-white"
+                  className="hidden w-6 h-6 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -270,16 +308,24 @@ export function VoiceAssistant({
                      aria-label="Agent ready" />
               )}
             </div>
-            <div>
-              <h1 className="text-white font-bold text-lg tracking-tight">{agentLabel}</h1>
-              <p className="text-indigo-100 text-xs">Voice Assistant</p>
+            <div className="flex items-center gap-2">
+              <img
+                src="/images/tableau-next-logo.png"
+                alt="Tableau Next"
+                className="h-8 w-auto"
+                onError={(e) => e.currentTarget.style.display = 'none'}
+              />
+              <div>
+                <h1 className="text-white font-bold text-lg tracking-tight">{agentLabel}</h1>
+                <p className="text-white/80 text-xs">Voice Assistant</p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {continuousMode && (
               <span className={`text-xs px-2.5 py-1 rounded-full font-medium border flex items-center gap-1.5 ${
                 isContinuousActive
-                  ? 'bg-emerald-500/90 text-white border-emerald-400 animate-pulse'
+                  ? 'bg-[#59A14F] text-white border-[#4A8C42] animate-pulse'
                   : 'bg-white/15 backdrop-blur-sm text-white border-white/20'
               }`}>
                 {isContinuousActive && (
@@ -294,12 +340,12 @@ export function VoiceAssistant({
               </span>
             )}
             {!sttSupported && (
-              <span className="text-xs bg-red-500/80 text-white px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-[#F28E2B]/80 text-white px-2.5 py-1 rounded-full">
                 STT unavailable
               </span>
             )}
             {!ttsSupported && (
-              <span className="text-xs bg-yellow-500/80 text-white px-2.5 py-1 rounded-full">
+              <span className="text-xs bg-[#F28E2B]/80 text-white px-2.5 py-1 rounded-full">
                 TTS unavailable
               </span>
             )}
@@ -307,18 +353,18 @@ export function VoiceAssistant({
         </div>
       </header>
 
-      {/* Error banner */}
+      {/* Error banner (using orange for warnings, not red) */}
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-6 py-3 flex items-center justify-between shadow-sm">
+        <div className="bg-orange-50 border-b border-orange-200 px-6 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-[#F28E2B]" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
-            <span className="text-sm text-red-700 font-medium">{error}</span>
+            <span className="text-sm text-orange-800 font-medium">{error}</span>
           </div>
           <button
             onClick={() => setError(null)}
-            className="text-red-500 hover:text-red-700 transition-colors"
+            className="text-[#F28E2B] hover:text-orange-700 transition-colors"
             aria-label="Dismiss error"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -343,18 +389,18 @@ export function VoiceAssistant({
       )}
 
       {/* Accessibility banner */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-indigo-100 px-6 py-3 shadow-sm">
+      <div className="bg-teal-50 border-b border-teal-100 px-6 py-3 shadow-sm">
         <div className="flex items-start gap-2">
-          <svg className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-5 h-5 text-[#76B7B2] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
-          <div className="text-sm text-indigo-900 leading-relaxed">
+          <div className="text-sm text-gray-900 leading-relaxed">
             <p>
-              <strong className="font-semibold">Accessibility:</strong> Press <kbd className="px-1.5 py-0.5 bg-white/60 rounded text-xs font-mono border border-indigo-200">Alt+V</kbd> to activate voice assistant.
+              <strong className="font-semibold">Accessibility:</strong> Press <kbd className="px-1.5 py-0.5 bg-white/60 rounded text-xs font-mono border border-teal-200">Alt+V</kbd> to activate voice assistant.
               Ask questions about dashboard data and receive spoken answers. Optimized for screen readers with clear, descriptive language.
             </p>
             {micPermission === 'prompt' && (
-              <p className="mt-2 text-xs text-indigo-700">
+              <p className="mt-2 text-xs text-gray-700">
                 ℹ️ First click will request microphone permission.
               </p>
             )}
@@ -367,9 +413,6 @@ export function VoiceAssistant({
         className="flex-1 overflow-y-auto px-6 py-6 space-y-4"
         role="log"
         aria-label="Conversation history"
-        aria-live="assertive"
-        aria-atomic="false"
-        aria-relevant="additions text"
       >
         {messages.map((message) => (
           <div
@@ -379,14 +422,22 @@ export function VoiceAssistant({
             <div
               className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
                 message.role === 'user'
-                  ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white'
-                  : 'bg-white text-slate-800 border border-slate-200'
+                  ? 'bg-[#4E79A7] text-white'
+                  : 'bg-white text-gray-800 border border-gray-200'
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+
+              {/* Render visualization if present (agent messages only) */}
+              {message.role === 'agent' && message.visualizationMetadata && (
+                <div className="mt-3">
+                  <ChartRenderer visualizationMetadata={message.visualizationMetadata} />
+                </div>
+              )}
+
               <time
                 className={`text-xs mt-1.5 block ${
-                  message.role === 'user' ? 'text-indigo-200' : 'text-slate-400'
+                  message.role === 'user' ? 'text-white/70' : 'text-gray-400'
                 }`}
                 dateTime={message.timestamp.toISOString()}
               >
@@ -399,7 +450,7 @@ export function VoiceAssistant({
       </div>
 
       {/* Voice control */}
-      <div className="border-t border-slate-200 bg-white px-6 py-6 shadow-lg">
+      <div className="border-t border-gray-200 bg-white px-6 py-6 shadow-lg">
         <div className="flex flex-col items-center gap-4">
           {/* Microphone button */}
           <div className="relative">
@@ -408,19 +459,19 @@ export function VoiceAssistant({
               disabled={isDisabled}
               className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 shadow-lg ${
                 isListening
-                  ? 'bg-gradient-to-br from-red-500 to-red-600 focus:ring-red-300 animate-pulse shadow-red-500/50'
+                  ? 'bg-[#76B7B2] focus:ring-teal-300 animate-pulse shadow-teal-500/50'
                   : isDisabled
-                  ? 'bg-slate-300 cursor-not-allowed shadow-slate-300/50'
-                  : 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:ring-indigo-300 shadow-indigo-500/50 hover:scale-105'
+                  ? 'bg-gray-300 cursor-not-allowed shadow-gray-300/50'
+                  : 'bg-gradient-to-br from-[#4E79A7] to-[#76B7B2] hover:from-[#76B7B2] hover:to-[#4E79A7] focus:ring-blue-300 shadow-blue-500/50 hover:scale-105'
               }`}
               aria-label={isListening ? 'Stop listening' : 'Start listening'}
               aria-pressed={isListening}
             >
-              {/* Listening pulse rings */}
+              {/* Listening pulse rings (teal accent) */}
               {isListening && (
                 <>
-                  <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75" />
-                  <span className="absolute inset-0 rounded-full bg-red-500 animate-pulse opacity-50" />
+                  <span className="absolute inset-0 rounded-full bg-[#76B7B2] animate-ping opacity-75" />
+                  <span className="absolute inset-0 rounded-full bg-[#76B7B2] animate-pulse opacity-50" />
                 </>
               )}
 
@@ -476,15 +527,25 @@ export function VoiceAssistant({
 
           {/* Status text */}
           <div className="text-center">
-            <p className="text-base font-medium text-slate-700" aria-live="polite">
+            <p className="text-base font-medium text-gray-700" aria-live="polite">
               {getStatusText()}
             </p>
-            <p className="text-xs text-slate-500 mt-1 flex items-center justify-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-xs font-mono border border-slate-300">Alt+V</kbd>
+            <p className="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
+              <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono border border-gray-300">Alt+V</kbd>
               to activate
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Screen reader-only live region - mirrors voice output */}
+      <div
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {lastAnnouncedMessage}
       </div>
     </div>
   );
