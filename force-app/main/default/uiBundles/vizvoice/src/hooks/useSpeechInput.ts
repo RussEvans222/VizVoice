@@ -65,11 +65,13 @@ export function useSpeechInput(): UseSpeechInputReturn {
       rejectRef.current = reject;
 
       recognition.onstart = () => {
+        console.log('[useSpeechInput] Recognition started - microphone active');
         setState('listening');
         playEarcon(EARCON_START_HZ, 120);
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
+        console.log('[useSpeechInput] Recognition result:', event.results[0]?.[0]?.transcript);
         setState('processing');
         const transcript = event.results[0]?.[0]?.transcript ?? '';
         resolveRef.current?.(transcript);
@@ -78,13 +80,20 @@ export function useSpeechInput(): UseSpeechInputReturn {
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error('[useSpeechInput] Recognition error:', event.error, event);
         setState('idle');
-        rejectRef.current?.(new Error(event.error));
+        const errorMessage = event.error === 'not-allowed'
+          ? 'Microphone access denied. Please allow microphone permission in browser settings.'
+          : event.error === 'no-speech'
+          ? 'No speech detected. Please try again.'
+          : `Speech recognition error: ${event.error}`;
+        rejectRef.current?.(new Error(errorMessage));
         rejectRef.current = null;
         resolveRef.current = null;
       };
 
       recognition.onend = () => {
+        console.log('[useSpeechInput] Recognition ended');
         setState('idle');
         // If no result fired (e.g. silence), resolve with empty string
         if (resolveRef.current) {
@@ -94,7 +103,13 @@ export function useSpeechInput(): UseSpeechInputReturn {
         }
       };
 
-      recognition.start();
+      try {
+        console.log('[useSpeechInput] Starting recognition...');
+        recognition.start();
+      } catch (err) {
+        console.error('[useSpeechInput] Failed to start recognition:', err);
+        reject(err instanceof Error ? err : new Error('Failed to start speech recognition'));
+      }
     });
   }, [supported]);
 
