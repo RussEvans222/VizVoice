@@ -1,0 +1,61 @@
+Record_Id,Line,Line_Type,Month,Year,On_Time_Pct,Avg_Delay_Minutes,Ridership,Cancelled_Trips,Delay_Cause,Satisfaction_Score,Incidents
+Blue_Line_January_2025,Blue Line,Subway,January,2025,89.2,2.1,312000,15,Weather,82,3
+Blue_Line_February_2025,Blue Line,Subway,February,2025,91.5,1.8,325000,10,Signal Failure,84,2
+Blue_Line_March_2025,Blue Line,Subway,March,2025,90.8,1.9,338000,12,Track Maintenance,83,3
+Blue_Line_April_2025,Blue Line,Subway,April,2025,92.1,1.6,345000,8,Mechanical Issue,85,2
+Blue_Line_May_2025,Blue Line,Subway,May,2025,91.8,1.7,352000,9,Track Maintenance,84,2
+Blue_Line_June_2025,Blue Line,Subway,June,2025,92.5,1.5,348000,7,Signal Failure,86,1
+Blue_Line_July_2025,Blue Line,Subway,July,2025,92.9,1.4,341000,8,Track Maintenance,85,2
+Blue_Line_August_2025,Blue Line,Subway,August,2025,91.2,1.8,335000,11,Weather,83,3
+Blue_Line_September_2025,Blue Line,Subway,September,2025,90.5,2.0,342000,13,Signal Failure,82,4
+Blue_Line_October_2025,Blue Line,Subway,October,2025,89.8,2.2,348000,16,Track Maintenance,81,4
+Blue_Line_November_2025,Blue Line,Subway,November,2025,87.9,2.6,301000,22,Weather,79,5
+Blue_Line_December_2025,Blue Line,Subway,December,2025,88.5,2.4,295000,20,Weather,80,4
+Green_Line_January_2025,Green Line,Light Rail,January,2025,85.3,2.8,165000,18,Signal Failure,76,5
+Green_Line_February_2025,Green Line,Light Rail,February,2025,86.9,2.5,172000,15,Track Maintenance,78,4
+Green_Line_March_2025,Green Line,Light Rail,March,2025,87.4,2.4,179000,16,Signal Failure,78,4
+Green_Line_April_2025,Green Line,Light Rail,April,2025,88.2,2.2,185000,14,Mechanical Issue,79,3
+Green_Line_May_2025,Green Line,Light Rail,May,2025,89.1,2.0,192000,12,Track Maintenance,80,3
+Green_Line_June_2025,Green Line,Light Rail,June,2025,90.3,1.8,198000,10,Signal Failure,82,2
+Green_Line_July_2025,Green Line,Light Rail,July,2025,91.2,1.6,205000,9,Mechanical Issue,83,2
+Green_Line_August_2025,Green Line,Light Rail,August,2025,90.5,1.9,201000,11,Track Maintenance,82,3
+Green_Line_September_2025,Green Line,Light Rail,September,2025,89.7,2.1,195000,13,Weather,81,3
+Green_Line_October_2025,Green Line,Light Rail,October,2025,88.9,2.3,189000,15,Signal Failure,79,4
+Green_Line_November_2025,Green Line,Light Rail,November,2025,87.1,2.6,175000,19,Weather,77,5
+Green_Line_December_2025,Green Line,Light Rail,December,2025,86.5,2.7,168000,20,Weather,76,5
+Red_Line_January_2025,Red Line,Subway,January,2025,91.8,1.7,425000,12,Track Maintenance,87,2
+Red_Line_February_2025,Red Line,Subway,February,2025,93.2,1.4,442000,9,Signal Failure,89,1
+Red_Line_March_2025,Red Line,Subway,March,2025,92.5,1.6,458000,10,Mechanical Issue,88,2
+Red_Line_April_2025,Red Line,Subway,April,2025,93.8,1.3,475000,7,Track Maintenance,90,1
+Red_Line_May_2025,Red Line,Subway,May,2025,94.2,1.2,492000,6,Signal Failure,91,1
+Red_Line_June_2025,Red Line,Subway,June,2025,94.5,1.1,508000,5,Mechanical Issue,92,0
+Red_Line_July_2025,Red Line,Subway,July,2025,94.8,1.0,515000,5,Track Maintenance,92,1
+Red_Line_August_2025,Red Line,Subway,August,2025,93.9,1.4,505000,8,Weather,90,2
+Red_Line_September_2025,Red Line,Subway,September,2025,93.2,1.5,498000,9,Signal Failure,89,2
+Red_Line_October_2025,Red Line,Subway,October,2025,92.5,1.7,485000,11,Track Maintenance,88,3
+Red_Line_November_2025,Red Line,Subway,November,2025,90.8,2.0,452000,15,Weather,85,4
+Red_Line_December_2025,Red Line,Subway,December,2025,91.3,1.9,445000,14,Weather,86,3
+Orange_Line_January_2025,Orange Line,Bus,January,2025,82.5,3.5,95000,25,Weather,72,7
+Orange_Line_February_2025,Orange Line,Bus,February,2025,84.2,3.1,98000,22,Traffic,74,6
+Orange_Line_March_2025,Orange Line,Bus,March,2025,85.8,2.8,102000,20,Mechanical Issue,76,5
+Orange_Line_April_2025,Orange Line,Bus,April,2025,87.1,2.5,108000,18,Traffic,78,4
+Orange_Line_May_2025,Orange Line,Bus,May,2025,88.5,2.2,115000,15,Mechanical Issue,80,3
+Orange_Line_June_2025,Orange Line,Bus,June,2025,89.8,1.9,122000,13,Traffic,82,3
+Orange_Line_July_2025,Orange Line,Bus,July,2025,90.2,1.8,128000,12,Mechanical Issue,83,2
+Orange_Line_August_2025,Orange Line,Bus,August,2025,89.1,2.1,125000,14,Weather,81,3
+Orange_Line_September_2025,Orange Line,Bus,September,2025,88.3,2.3,120000,16,Traffic,80,4
+Orange_Line_October_2025,Orange Line,Bus,October,2025,87.5,2.6,115000,18,Mechanical Issue,78,5
+Orange_Line_November_2025,Orange Line,Bus,November,2025,85.2,3.0,102000,23,Weather,75,6
+Orange_Line_December_2025,Orange Line,Bus,December,2025,84.8,3.2,98000,24,Weather,74,7
+Purple_Line_January_2025,Purple Line,Commuter Rail,January,2025,88.5,2.3,58000,14,Track Maintenance,80,3
+Purple_Line_February_2025,Purple Line,Commuter Rail,February,2025,90.2,2.0,62000,11,Signal Failure,82,2
+Purple_Line_March_2025,Purple Line,Commuter Rail,March,2025,91.5,1.8,65000,10,Mechanical Issue,84,2
+Purple_Line_April_2025,Purple Line,Commuter Rail,April,2025,92.8,1.5,68000,8,Track Maintenance,86,1
+Purple_Line_May_2025,Purple Line,Commuter Rail,May,2025,93.2,1.4,72000,7,Signal Failure,87,1
+Purple_Line_June_2025,Purple Line,Commuter Rail,June,2025,93.8,1.3,75000,6,Mechanical Issue,88,1
+Purple_Line_July_2025,Purple Line,Commuter Rail,July,2025,94.1,1.2,78000,6,Track Maintenance,89,0
+Purple_Line_August_2025,Purple Line,Commuter Rail,August,2025,93.5,1.4,76000,7,Weather,87,2
+Purple_Line_September_2025,Purple Line,Commuter Rail,September,2025,92.8,1.6,73000,9,Signal Failure,86,2
+Purple_Line_October_2025,Purple Line,Commuter Rail,October,2025,92.1,1.7,70000,10,Track Maintenance,85,3
+Purple_Line_November_2025,Purple Line,Commuter Rail,November,2025,90.5,2.1,62000,14,Weather,82,4
+Purple_Line_December_2025,Purple Line,Commuter Rail,December,2025,89.8,2.2,60000,15,Weather,81,4

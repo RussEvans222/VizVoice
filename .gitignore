@@ -48,3 +48,14 @@ $RECYCLE.BIN/
 demo-out/
 *.mp4
 *.srt
+
+# Claude Code working directories
+.demo_workdir/
+
+# IDE and editor files
+.vscode/
+.cursor/
+.idea/
+
+# Temporary work files
+/tmp/

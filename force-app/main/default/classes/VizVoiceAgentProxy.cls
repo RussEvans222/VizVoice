@@ -57,10 +57,13 @@ global without sharing class VizVoiceAgentProxy {
     private static final String AGENT_ACTION_PATH =
         '/services/data/' + API_VERSION + '/actions/custom/generateAiAgentResponse/' + AGENT_ACTION;
     // Prepended to every utterance to keep spoken answers short (voice/TTS UX).
+    // Includes transparency directives: acknowledge uncertainty, disclose AI identity when asked.
     private static final String BREVITY_DIRECTIVE =
         '[Answer for a voice assistant: lead with the single most important number, ' +
         'keep it to at most 2 short sentences, no lists or markdown, and never use ' +
-        'visual phrases like "as you can see" or "the chart shows".]';
+        'visual phrases like "as you can see" or "the chart shows". If results are tied ' +
+        'or ambiguous, say so explicitly (e.g., "Blue Line and Red Line are tied at 12 each"). ' +
+        'If asked about your capabilities, state you are an AI agent limited to this dashboard\'s data.]';
 
     @HttpGet
     global static void doGet() {

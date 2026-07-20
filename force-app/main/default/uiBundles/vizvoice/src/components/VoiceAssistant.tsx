@@ -30,8 +30,9 @@ interface VoiceAssistantProps {
 }
 
 const WELCOME_MESSAGE =
-  "Hello! I'm VizVoice, your voice assistant for exploring dashboard analytics. " +
-  'Press Alt+V or tap the microphone to speak. Ask me questions about transit data, cancellations, and line performance.';
+  "Hello! I'm VizVoice, an AI agent designed to help you explore dashboard analytics through voice. " +
+  "I'm limited to information in this dashboard's semantic model. " +
+  'Press Alt+V or tap the microphone to speak. Ask me questions about the data you\'re viewing.';
 
 export function VoiceAssistant({
   agentLabel = 'VizVoice',
@@ -293,7 +294,8 @@ export function VoiceAssistant({
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  aria-hidden="true"
+                  role="img"
+                  aria-label="VizVoice voice assistant icon"
                 >
                   <path
                     strokeLinecap="round"
@@ -357,14 +359,32 @@ export function VoiceAssistant({
       {error && (
         <div className="bg-orange-50 border-b border-orange-200 px-6 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-[#F28E2B]" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-[#F28E2B] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
-            <span className="text-sm text-orange-800 font-medium">{error}</span>
+            <div className="flex-1">
+              <span className="text-sm text-orange-800 font-medium block">{error}</span>
+              {/* Contextual recovery suggestions */}
+              {error.includes('Microphone access denied') && (
+                <span className="text-xs text-orange-700 block mt-1">
+                  💡 To fix: Click the lock icon in your browser's address bar → Allow microphone → Reload page
+                </span>
+              )}
+              {error.includes('not supported') && (
+                <span className="text-xs text-orange-700 block mt-1">
+                  💡 Try using Chrome, Safari, or Edge for best voice support
+                </span>
+              )}
+              {(error.includes('Agent') || error.includes('agent') || error.includes('Connection')) && !error.includes('Microphone') && (
+                <span className="text-xs text-orange-700 block mt-1">
+                  💡 Check your internet connection and try again
+                </span>
+              )}
+            </div>
           </div>
           <button
             onClick={() => setError(null)}
-            className="text-[#F28E2B] hover:text-orange-700 transition-colors"
+            className="text-[#F28E2B] hover:text-orange-700 transition-colors flex-shrink-0"
             aria-label="Dismiss error"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -457,12 +477,12 @@ export function VoiceAssistant({
             <button
               onClick={() => handleVoiceInteraction()}
               disabled={isDisabled}
-              className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 shadow-lg ${
+              className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-white/90 focus:ring-offset-2 focus:ring-offset-blue-600 shadow-lg ${
                 isListening
-                  ? 'bg-[#76B7B2] focus:ring-teal-300 animate-pulse shadow-teal-500/50'
+                  ? 'bg-[#76B7B2] animate-pulse shadow-teal-500/50'
                   : isDisabled
                   ? 'bg-gray-300 cursor-not-allowed shadow-gray-300/50'
-                  : 'bg-gradient-to-br from-[#4E79A7] to-[#76B7B2] hover:from-[#76B7B2] hover:to-[#4E79A7] focus:ring-blue-300 shadow-blue-500/50 hover:scale-105'
+                  : 'bg-gradient-to-br from-[#4E79A7] to-[#76B7B2] hover:from-[#76B7B2] hover:to-[#4E79A7] shadow-blue-500/50 hover:scale-105'
               }`}
               aria-label={isListening ? 'Stop listening' : 'Start listening'}
               aria-pressed={isListening}
@@ -534,6 +554,29 @@ export function VoiceAssistant({
               <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono border border-gray-300">Alt+V</kbd>
               to activate
             </p>
+            {/* Help button - explains capabilities and limitations */}
+            <button
+              onClick={() => {
+                const helpMessage =
+                  "I can answer questions about dashboard metrics like 'What was the total revenue?' or 'Which product had the most sales?' " +
+                  "I'm limited to data in this dashboard's semantic model and can't access individual records or make predictions. " +
+                  "You can also ask me to filter the visualization by saying things like 'Show only Q3 data.'";
+                speak(helpMessage);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: `help-${Date.now()}`,
+                    role: 'agent',
+                    text: helpMessage,
+                    timestamp: new Date(),
+                  },
+                ]);
+              }}
+              className="mt-2 text-xs text-blue-600 hover:text-blue-800 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-2 py-1"
+              aria-label="Learn what VizVoice can do"
+            >
+              What can you help me with?
+            </button>
           </div>
         </div>
       </div>
