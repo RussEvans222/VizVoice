@@ -1,10 +1,48 @@
 # Partner Demo Setup Prompt
 
-**Instructions:** Copy the prompt below and paste it into Claude Code. Claude will set everything up automatically.
+**Instructions:** Choose either Option A (Demo Recorder Skill) or Option B (Manual Setup).
 
 ---
 
-## 📋 Prompt for Your Partner
+## 🎬 Option A: Using Demo Recorder Skill (RECOMMENDED)
+
+**Best for:** Automated setup with demo recording support
+
+### Steps:
+
+1. **Clone the repository first:**
+   ```bash
+   git clone https://github.com/RussEvans222/VizVoice.git
+   cd VizVoice
+   ```
+
+2. **Open Claude Code in the VizVoice directory**
+
+3. **Run the demo setup skill:**
+   ```
+   /demo-recorder:demo-setup
+   ```
+
+4. **Answer the prompts with:**
+   - **Org URL:** `https://orgfarm-aac260ab62-dev-ed.develop.my.salesforce.com`
+   - **Features to showcase:** Voice accessibility, WCAG compliance, Data Cloud integration
+   - **Target length:** 5 minutes
+
+5. **The skill will automatically:**
+   - Authenticate to org
+   - Build and deploy the UI Bundle
+   - Set up demo script
+   - Provide test questions
+
+See [DEMO_RECORDER_GUIDE.md](DEMO_RECORDER_GUIDE.md) for full details.
+
+---
+
+## 🚀 Option B: Manual Setup with Claude Code
+
+**Best for:** Quick setup without demo recorder
+
+### Prompt to paste in Claude Code:
 
 ```
 I need to set up and test the VizVoice project for demo recording.
